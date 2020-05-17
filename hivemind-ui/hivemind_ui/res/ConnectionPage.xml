@@ -1,0 +1,26 @@
+<ConnectionPage>
+    <QWidget stretch="1"/>
+    <VBox setSpacing="30">
+        <QWidget stretch="1"/>
+        <HBox>
+            <QLabel arg0="Server: "/>
+            <QLineEdit name="host_box" arg0="127.0.0.1" setAlignment="@AlignRight"/>
+        </HBox>
+        <HBox>
+            <QLabel arg0="Port: "/>
+            <QLineEdit name="port_box" arg0="5402" setAlignment="@AlignRight"/>
+        </HBox>
+        <QLabel arg0=""/>
+        <HBox>
+            <QPushButton name="spawn_daemon_btn" text="spawn daemon"/>
+            <QWidget stretch="1"/>
+        </HBox>
+        <HBox>
+            <QPushButton name="connect_btn" text="connect"/>
+            <QWidget stretch="1"/>
+            <ServerStatus name="connect_status" arg0="" setAlignment="@AlignCenter"/>
+        </HBox>
+        <QWidget stretch="1"/>
+    </VBox>
+    <QWidget stretch="1"/>
+</ConnectionPage>

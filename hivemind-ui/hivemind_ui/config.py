@@ -1,0 +1,67 @@
+from typing import Any, Dict
+
+
+default_config = {
+    'daemon.server': '127.0.0.1',
+    'daemon.port': 5402,
+}
+
+
+config_types = {
+    'daemon.server': str,
+    'daemon.port': int,
+}
+
+
+def load_config() -> Dict[str, Any]:
+    # TODO load config if it exists
+    return default_config
+
+
+def set_config(k: str, v: Any):
+    Config.set(k, v)
+    
+
+def get_config(k: str) -> Any:
+    return Config.get(k)
+
+
+def items():
+    return Config.items()
+
+
+def typed_items(): 
+    return [(k, config_types[k], v) for k, v in Config.items()]
+
+
+class Config:
+    _items: Dict[str, Any] = load_config()
+
+    @staticmethod
+    def set(k: str, v: Any):
+        if k not in config_types:
+            raise KeyError(f'Unknown config value {k}')
+        t = config_types[k]
+        Config._items[k] = t(v)
+
+    @staticmethod
+    def get(k: str) -> Any:
+        return Config._items.get(k)
+
+    @staticmethod
+    def items():
+        return Config._items.items()
+    
+    
+class Transient:
+    # For non-persistent config that is always reset at launch (aka program global state)
+    _items: Dict[str, Any] = {}
+    
+    @staticmethod
+    def set(k: str, v: Any):
+        Transient._items[k] = v
+
+    @staticmethod
+    def get(k: str) -> Any:
+        return Transient._items.get(k)
+

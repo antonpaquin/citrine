@@ -1,0 +1,5 @@
+<NavPanel setAutoFillBackground="True" setAlignment="@AlignTop">
+    <StartupNavButton/>
+    <ConnectionNavButton/>
+    <ConfigNavButton/>
+</NavPanel>

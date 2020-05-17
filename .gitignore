@@ -1,0 +1,17 @@
+.bash_history
+.cache/*
+.config/*
+.idea
+.lesshst
+.local/*
+.python_history
+.run/*
+env
+.viminfo
+qtcreator
+__pycache__
+*.egg-info
+hivemind-daemon/test
+hivemind-daemon/onnx
+.gitconfig
+activate

@@ -1,0 +1,5 @@
+<ConnectionPage>
+    <QLineEdit name="search_bar" setPlaceholderText="search"/>
+    <QLabel arg0=""/>
+    <QTableWidget name="li" stretch="1" setColumnCount="3"/>
+</ConnectionPage>
