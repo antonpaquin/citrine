@@ -2,4 +2,5 @@
     <StartupNavButton/>
     <ConnectionNavButton/>
     <ConfigNavButton/>
+    <PackageNavButton/>
 </NavPanel>

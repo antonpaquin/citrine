@@ -1,6 +1,5 @@
 import subprocess
 import threading
-from typing import Callable
 
 from PySide2 import QtWidgets, QtGui
 import hivemind_client

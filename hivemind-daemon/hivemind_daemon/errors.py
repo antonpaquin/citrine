@@ -24,17 +24,19 @@ class HivemindException(Exception):
         return res
 
 
-class InternalError(HivemindException): name = 'Internal Error'
 class JobInterrupted(HivemindException): name = 'Job Interrupted'
-class MissingEndpoint(HivemindException): name = 'Missing Endpoint'
-class ModelRunError(HivemindException): name = 'Model Run Error'
+
+class InternalError(HivemindException): name = 'Internal Error'
+class ModelRunError(InternalError): name = 'Model Run Error'
+
 class PackageError(HivemindException): name = 'Package Error'
-class PackageInstallError(HivemindException): name = 'Package Install Error'
+class PackageInstallError(PackageError): name = 'Package Install Error'
+class PackageStorageError(PackageError): name = 'Package Storage Error'
 
 class DownloadException(HivemindException): name = 'Download Exception'
 class DownloadCollision(DownloadException): name = 'Download Collision'
 class HashMismatch(DownloadException): name = 'Hash Mismatch'
-class RemoteFailedError(DownloadException): 'Remote Server Error'
+class RemoteFailedError(DownloadException): name = 'Remote Server Error'
 
 class DatabaseError(HivemindException): name = 'Database Error'
 class DatabaseMissingEntry(DatabaseError): name = 'Missing Entry'
@@ -45,6 +47,7 @@ class InvalidInput(HivemindException):
     def __init__(self, msg, status_code=400, data=None):
         super(InvalidInput, self).__init__(msg, status_code=status_code, data=data)
 
+class MissingEndpoint(InvalidInput): name = 'Missing Endpoint'
 class InvalidTensor(InvalidInput): name = 'Invalid Tensor'
 class NoSuchJob(InvalidInput): name = 'No such job'
 class ValidationError(InvalidInput): name = 'Validation Error'

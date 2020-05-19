@@ -1,0 +1,21 @@
+<PackageEntry>
+    <VBox setSpacing="10">
+        <QWidget stretch="1"/>
+        <QLabel name="human_name"/>
+        <QLabel name="name"/>
+        <QLabel name="version"/>
+        <QWidget stretch="1"/>
+    </VBox>
+    <VBox setSpacing="10">
+        <QWidget stretch="1"/>
+        <HBox>
+            <QWidget stretch="1"/>
+            <QPushButton name="active_btn"/>
+        </HBox>
+        <HBox>
+            <QWidget stretch="1"/>
+            <QPushButton name="remove_btn" arg0="uninstall"/>
+        </HBox>
+        <QWidget stretch="1"/>
+    </VBox>
+</PackageEntry>

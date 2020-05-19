@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Dict, Iterable
+from typing import *
 import threading
 
 from hivemind_daemon import errors, storage
@@ -15,10 +15,44 @@ def _db_path():
     return os.path.join(storage.root_path, 'package.db')
 
 
+def start_connection():
+    connection_pool.conn = sqlite3.connect(_db_path())
+    
+    
+def end_connection(commit: bool):
+    conn = connection_pool.conn  # type: sqlite3.Connection
+    if commit:
+        conn.commit()
+    else:
+        conn.rollback()
+    conn.close()
+    connection_pool.conn = None
+
+
 def get_conn():
     if getattr(connection_pool, 'conn', None) is None:
+        # TODO: I kinda only want this to work on the main thread
+        # worker threads should have something available via start_connection()
         connection_pool.conn = sqlite3.connect(_db_path())
     return connection_pool.conn
+
+
+class Cursor:
+    def __init__(self, conn=None):
+        if conn:
+            self.conn = conn
+        else:
+            self.conn = None
+        self.cur = None
+        
+    def __enter__(self):
+        if self.conn is None:
+            self.conn = connection_pool.conn
+        self.cur = self.conn.cursor()
+        return self.cur
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cur.close()
 
 
 def init_db():
@@ -28,28 +62,26 @@ def init_db():
         
 def _init_db():
     conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(DBPackage.create_table)
-    cur.execute(DBModel.create_table)
-    cur.close()
+    with Cursor(conn) as cur:
+        cur.execute(DBPackage.create_table)
+        cur.execute(DBModel.create_table)
     conn.commit()
 
 
-def install_package(package: Dict, install_id: str) -> DBPackage:
-    # TODO check for package install conflicts first
-    # E.g. version, etc
-    conn = get_conn()
+def install_package(package_meta: Dict, install_id: str) -> DBPackage:
+    try:
+        db_package = DBPackage(
+            name=package_meta['name'],
+            active=False,
+            version=package_meta.get('version', None),
+            human_name=package_meta.get('humanname', None),
+            install_path=install_id,
+        )
+        db_package.insert()
+    except sqlite3.IntegrityError as e:
+        raise errors.PackageInstallError(f'Package {package_meta["name"]} already exists', data=str(e))
 
-    db_package = DBPackage(
-        name=package['name'],
-        active=False,
-        version=package.get('version', None),
-        human_name=package.get('humanname', None),
-        install_path=install_id,
-    )
-    db_package.insert()
-
-    for model_name, model_spec in package['model'].items():
+    for model_name, model_spec in package_meta['model'].items():
         install_path = os.path.join(install_id, f'{model_name}.{model_spec["type"]}')
         model = DBModel(
             package_id=db_package.rowid,
@@ -59,13 +91,11 @@ def install_package(package: Dict, install_id: str) -> DBPackage:
         )
         model.insert()
 
-    conn.commit()
-
     return db_package
 
 
-def get_model(package_name: str, model_name: str) -> str:
-    fname = os.path.join(storage.model_path, package_name, f'{model_name}.onnx')
-    if not os.path.isfile(fname):
-        raise errors.InternalError(f'Model for {model_name} was missing from cache')
-    return fname
+def list_packages() -> Dict:
+    return {
+        'packages': list(DBPackage.get_all())
+    }
+

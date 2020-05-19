@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import stopit
 
-from hivemind_daemon import errors
+from hivemind_daemon import errors, package
 from hivemind_daemon.server.json import HivemindEncoder
 
 
@@ -68,8 +68,8 @@ class AsyncFuture(object):
     def run(self, thread):
         if self.state != FutureState.INITIALIZED:
             return
-        self.thread = thread
         try:
+            self.thread = thread  # Once this is set, thread can be interrupted
             self.transition(FutureState.RUNNING)
             self.result_val = self.fn(*self.args, **self.kwargs)
             self.transition(FutureState.DONE)
@@ -138,10 +138,12 @@ def worker_thread(worker_id: int):
     while True:
         job: AsyncFuture = primary_job_queue.get()
         thread_local.active_job = job
+        package.db.start_connection()
         try:
             job.run(self)
         except errors.JobInterrupted:
             pass
+        package.db.end_connection(commit=(job.state == FutureState.DONE))
         thread_local.active_job = None
         
 

@@ -5,6 +5,8 @@
 
 QPushButton {
     padding: 10px;
+    background-color: #aaa;
+    color: #000;
 }
 
 QLabel {
@@ -77,4 +79,35 @@ ConfigPage QHeaderView {
 ConfigPage QTableWidget::item {
     padding-left: 20px;
     padding-right: 20px;
+}
+
+PackagePage, PackagePage QListWidget {
+    background-color: #222;
+}
+
+PackagePage QListWidget {
+    border-top: 2px solid #aaa;
+}
+
+PackagePage QListWidget::item {
+    min-height: 200px;
+    padding: 20px;
+    border-bottom: 2px solid #aaa;
+}
+
+PackagePage PackageEntry QPushButton {
+    margin-right: 40px;
+}
+
+PackagePage PackagePageHeader {
+    margin: 20px;
+    padding: 20px;
+    background-color: #222;
+    border: 4px dashed #aaa;
+}
+
+PackagePage QProgressBar {
+    margin-left: 80px;
+    margin-right: 40px;
+    color: #aaa;
 }

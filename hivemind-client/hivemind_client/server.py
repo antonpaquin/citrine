@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Dict, Optional
 
 import requests
@@ -13,9 +14,10 @@ class DaemonLink(object):
         
         
 class AsyncRequest(object):
-    def __init__(self, server, endpoint, params=None, files=None, jsn=None):
+    def __init__(self, server, endpoint, params=None, files=None, jsn=None, method='post'):
         self.server = server
-        
+        self.method = method
+
         self.url = f'http://{server.host}:{server.port}/async{endpoint}'
         self.request_args = {}
         if params is not None:
@@ -45,9 +47,25 @@ class AsyncRequest(object):
             self.result = response['result']
         if 'error' in response:
             self.error = response['error']
+            
+    def run(self, callback=None):
+        with self:
+            while not self.done:
+                time.sleep(0.1)
+                self.refresh()
+                if callback and self.data:
+                    callback(self.data)
+        if self.status == 'Error':
+            raise errors.ServerError('Request failed', data=self.error)
+        return self.result
 
     def __enter__(self):
-        r = requests.post(self.url, **self.request_args)
+        if self.method == 'post':
+            r = requests.post(self.url, **self.request_args)
+        elif self.method == 'get':
+            r = requests.get(self.url, **self.request_args)
+        else:
+            r = requests.request(self.method, self.url, **self.request_args)
         resp = self._parse_response(r)
         self._update(resp)
         return self
@@ -71,8 +89,3 @@ class AsyncRequest(object):
         if response.status_code != 200:
             raise errors.ServerError('Server rejected request', data=resp)
         return resp
-
-
-def get_server() -> DaemonLink:
-    # Probably wants to read a config file or something
-    return DaemonLink(host='127.0.0.1', port=5402)

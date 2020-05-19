@@ -4,6 +4,8 @@ class HivemindClientError(Exception):
         super().__init__(msg)
         self.msg = msg
         self.data = data or {}
+        
+class NoBranch(HivemindClientError): name = 'Code branch should not be possible'
 
 class FileNotFound(HivemindClientError): name = 'File Not Found'
 class InvalidOptions(HivemindClientError): name = 'Invalid Options'

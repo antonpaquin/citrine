@@ -47,6 +47,9 @@ def call_raw(package_name: str, model_name: str, inputs: Dict[str, np.ndarray]) 
     # might be able to get away with it by guaranteeing that only one package with a given name can be active at a time
     # In sql I can do that with a new table, but it's messier than what we have now
     # (create table ActivePackage (package_id rowid, package_name unique str))
+
+    # Note that 'active' is mostly for constraining 'module.py', and `call_raw` can sidestep that by just sending numpy
+    # directly. So is it OK to ignore here?
     db_model = package.db.DBModel.from_names(package_name, model_name)
     model_file = storage.get_model_file(db_model)
     return nn.run_model(model_file, inputs)

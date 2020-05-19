@@ -8,6 +8,9 @@ from hivemind_daemon.storage import storage
 from hivemind_daemon.server.json import HivemindEncoder
 
 
+# TODO result database
+# consider moving this to the sqlite
+
 class FileHandle(object):
     def __init__(self):
         self.fname = str(uuid4()).replace('-', '')

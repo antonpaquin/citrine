@@ -115,7 +115,10 @@ def run_output(results, output_kv):
             raise errors.OptionParseError(f'Did not find {key_str} in the results')
         
         if isinstance(val, dict) and list(val.keys()) == ['fileresult']:
-            val = api.result(val['fileresult'])
+            # TODO undo hardcoding
+            # FIX THIS
+            client = api.HivemindClient('127.0.0.1', 5402)
+            val = client.result(val['fileresult'])
             
         if command == 'print':
             if isinstance(val, dict) or isinstance(val, list):

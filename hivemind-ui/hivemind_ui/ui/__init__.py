@@ -5,3 +5,4 @@ from hivemind_ui.ui.main_wrap import MainWrapper
 import hivemind_ui.ui.startup as startup
 import hivemind_ui.ui.connect_daemon as connect_daemon
 import hivemind_ui.ui.edit_config as edit_config
+import hivemind_ui.ui.packages as packages

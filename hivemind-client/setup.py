@@ -11,7 +11,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'hivemind = hivemind_client.cli:main',
+            'hivemind = hivemind_client.__main__:main',
         ],
     },
 )

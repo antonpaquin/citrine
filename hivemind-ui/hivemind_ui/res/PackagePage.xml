@@ -1,0 +1,9 @@
+<PackagePage>
+    <!-- TODO: how to search for packages? -->
+    <!-- TODO: refresh button too -->
+    <PackagePageHeader>
+        <QLabel name="label_filename" arg0="Add a new package" stretch="1"/>
+        <QPushButton name="dialog_btn" text="Choose File"/>
+    </PackagePageHeader>
+    <QListWidget name="li" stretch="1"/>
+</PackagePage>

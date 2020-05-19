@@ -181,7 +181,7 @@ async def package_fetch(request: web.Request) -> AsyncFuture:
         raise errors.InternalError('Invalid package spec made it through validation')
 
 
-async def package_pull(request: web.Request) -> AsyncFuture:
+async def package_install(request: web.Request) -> AsyncFuture:
     """
     Fetch means download and put in DB, then load the module and make it available
     """
@@ -202,73 +202,69 @@ async def package_pull(request: web.Request) -> AsyncFuture:
 
 
 async def package_activate(request: web.Request) -> AsyncFuture:
-    pass
+    validator = cerberus.Validator(schema={
+        'name': {
+            'type': 'string',
+            'required': True,
+        },
+        'version': {
+            'type': 'string',
+            'required': False,
+            'nullable': True,
+            'default': None,
+        },
+    })
+    params = await expect_json(request, validator)
+    return run_async(package.load.activate_package, kwargs={
+        'name': params['name'],
+        'version': params['version'],
+    })
 
 
 async def package_deactivate(request: web.Request) -> AsyncFuture:
-    pass
+    # Maybe I can come up with a way to join these two?
+    # Just needs a good metaphor for the api
+    validator = cerberus.Validator(schema={
+        'name': {
+            'type': 'string',
+            'required': True,
+        },
+        'version': {
+            'type': 'string',
+            'required': False,
+            'nullable': True,
+            'default': None,
+        },
+    })
+    params = await expect_json(request, validator)
+    return run_async(package.load.deactivate_package, kwargs={
+        'name': params['name'],
+        'version': params['version'],
+    })
 
 
 async def package_remove(request: web.Request) -> AsyncFuture:
-    pass
-
-    
-async def daemon_install(request: web.Request) -> AsyncFuture:
-    v = cerberus.Validator(schema={
-        'type': {
+    validator = cerberus.Validator(schema={
+        'name': {
+            'type': 'string',
+            'required': True,
+        },
+        'version': {
             'type': 'string',
             'required': False,
-            'default': 'url',
-            'allowed': ['url', 'file'],
+            'nullable': True,
+            'default': None,
         },
-        'link': {
-            'type': 'string',
-            'required': True,
-        },
-        'hash': {
-            'type': 'string',
-            'required': False,
-            'default': '',
-        }
     })
-    params = await expect_json(request, v)
-    if params['type'] == 'url' and not params['hash']:
-        raise errors.ValidationError('Input failed to validate', data={'type': {'url': ['requires hash']}})
-
-    return run_async(package.install.install_package, kwargs={
-        'package_type': params['type'],
-        'link': params['link'],
-        'hash': params['hash'],
+    params = await expect_json(request, validator)
+    return run_async(package.install.remove_package, kwargs={
+        'name': params['name'],
+        'version': params['version'],
     })
 
 
-async def install(request: web.Request) -> AsyncFuture:
-    v = cerberus.Validator(schema={
-        'url': {
-            'type': 'string',
-            'required': True,
-        },
-        'hash': {
-            'type': 'string',
-            'required': True,
-        },
-    })
-    formdata = await get_formdata(request)
-    if 'hivespec' not in formdata:
-        raise errors.InvalidInput('Missing hivespec file')
-    try:
-        jsn = json.loads(formdata['hivespec'])
-    except Exception:
-        raise errors.InvalidInput(f'Hivespec file should be json formatted')
-    if not v.validate(jsn):
-        raise errors.ValidationError('Input failed to validate', data=v.errors)
-    params = v.document
-
-    return run_async(hivemind_daemon.package.install_package, kwargs={
-        'package_type': 'url',
-        'link': params['url'],
-        'hash': params['hash'],
-    })
+async def package_list(request: web.Request) -> AsyncFuture:
+    return run_async(package.db.list_packages)
 
 
 async def heartbeat(request: web.Request) -> web.Response:
@@ -322,10 +318,11 @@ def build_app():
         (web.post, '/_run/{packagename}/{modelname}', run_network_raw),
 
         (web.post, '/package/fetch', package_fetch),
-        (web.post, '/package/pull', package_pull),
+        (web.post, '/package/install', package_install),
         (web.post, '/package/activate', package_activate),
         (web.post, '/package/deactivate', package_deactivate),
         (web.post, '/package/remove', package_remove),
+        (web.get, '/package/list', package_list),
     ]
     
     for method, route, fn in asynchronizable:
