@@ -1,15 +1,18 @@
+import os
 from typing import Any, Dict
 
 
 default_config = {
     'daemon.server': '127.0.0.1',
     'daemon.port': 5402,
+    'storage.rootpath': os.path.join(os.getenv('HOME'), '.cache', 'hivemind', 'ui')
 }
 
 
 config_types = {
     'daemon.server': str,
     'daemon.port': int,
+    'storage.rootpath': str,
 }
 
 

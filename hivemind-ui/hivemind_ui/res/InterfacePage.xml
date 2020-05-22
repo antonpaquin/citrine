@@ -1,0 +1,4 @@
+<InterfacePage>
+    <QTreeWidget name="selector"/>
+    <QWebEngineView name="display" stretch="1"/>
+</InterfacePage>

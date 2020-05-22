@@ -11,12 +11,32 @@ class DaemonLink(object):
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
-        
-        
+
+
 class AsyncRequest(object):
-    def __init__(self, server, endpoint, params=None, files=None, jsn=None, method='post'):
+    def __init__(
+            self,
+            server: DaemonLink,
+            endpoint: str,
+            params: Optional[Dict] = None,
+            files: Optional[Dict[str, bytes]] = None,
+            jsn: Optional[Dict] = None,
+            method: str = 'post',
+            cancel: bool = True
+    ):
+        """
+        :param server:
+        :param endpoint:
+        :param params: Passed to requests 'params'
+        :param files: Passed to requests 'files'
+        :param jsn: Passed to requests 'json'
+        :param method: Which HTTP method to use
+        :param cancel:
+            If the request fails or is interrupted before it completes, should we send a cancellation request?
+        """
         self.server = server
         self.method = method
+        self.cancel = cancel
 
         self.url = f'http://{server.host}:{server.port}/async{endpoint}'
         self.request_args = {}
@@ -35,7 +55,12 @@ class AsyncRequest(object):
 
     def refresh(self):
         url_update = f'http://{self.server.host}:{self.server.port}/async/get/{self.uid}'
-        r = requests.get(url_update)
+        try:
+            r = requests.get(url_update, timeout=10)
+        except requests.exceptions.ConnectTimeout:
+            raise errors.ConnectionError('Connection timed out')
+        except requests.exceptions.ConnectionError:
+            raise errors.ConnectionRefused('Cannot connect to server')
         resp = self._parse_response(r)
         self._update(resp)
 
@@ -47,7 +72,7 @@ class AsyncRequest(object):
             self.result = response['result']
         if 'error' in response:
             self.error = response['error']
-            
+
     def run(self, callback=None):
         with self:
             while not self.done:
@@ -59,22 +84,36 @@ class AsyncRequest(object):
             raise errors.ServerError('Request failed', data=self.error)
         return self.result
 
-    def __enter__(self):
-        if self.method == 'post':
-            r = requests.post(self.url, **self.request_args)
-        elif self.method == 'get':
-            r = requests.get(self.url, **self.request_args)
-        else:
-            r = requests.request(self.method, self.url, **self.request_args)
+    def send(self):
+        try:
+            if self.method == 'post':
+                r = requests.post(self.url, **self.request_args, timeout=10)
+            elif self.method == 'get':
+                r = requests.get(self.url, **self.request_args, timeout=10)
+            else:
+                r = requests.request(self.method, self.url, **self.request_args, timeout=10)
+        except requests.exceptions.ConnectTimeout:
+            raise errors.ConnectionError('Connection timed out')
+        except requests.exceptions.ConnectionError:
+            raise errors.ConnectionRefused('Cannot connect to server')
+
         resp = self._parse_response(r)
         self._update(resp)
+
+    def __enter__(self):
+        self.send()
         return self
-        
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.done:
             return
+        if not self.cancel:
+            return
         url_cancel = f'http://{self.server.host}:{self.server.port}/async/cancel/{self.uid}'
-        requests.get(url_cancel)
+        try:
+            requests.get(url_cancel, timeout=1)
+        except Exception:
+            pass
 
     @property
     def done(self):

@@ -15,9 +15,10 @@ __all__ = [
 
 
 class PackageClient(object):
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, autocancel: bool = True):
         self.server = DaemonLink(host=host, port=port)
-        
+        self.autocancel = autocancel
+
     def install(
             self,
             specfile: Optional[str] = None,
@@ -27,9 +28,14 @@ class PackageClient(object):
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ) -> Dict:
         request_data = util.package_install_params(specfile, localfile, url, package_hash)
-        req = AsyncRequest(server=self.server, endpoint='/package/install', **request_data)
+        req = AsyncRequest(
+            server=self.server,
+            endpoint='/package/install',
+            cancel=self.autocancel,
+            **request_data,
+        )
         return req.run(callback=progress_callback)
-    
+
     def fetch(
             self,
             specfile: Optional[str] = None,
@@ -39,49 +45,76 @@ class PackageClient(object):
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ) -> Dict:
         request_data = util.package_install_params(specfile, localfile, url, package_hash)
-        req = AsyncRequest(server=self.server, endpoint='/package/install', **request_data)
+        req = AsyncRequest(
+            server=self.server,
+            endpoint='/package/install',
+            cancel=self.autocancel,
+            **request_data,
+        )
         return req.run(callback=progress_callback)
-    
+
     def activate(
             self,
             name: str,
             version: Optional[str],
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ):
-        req = AsyncRequest(server=self.server, endpoint='/package/activate', jsn={'name': name, 'version': version})
+        req = AsyncRequest(
+            server=self.server,
+            endpoint='/package/activate',
+            cancel=self.autocancel,
+            jsn={'name': name, 'version': version},
+        )
         return req.run(callback=progress_callback)
-    
+
     def deactivate(
             self,
             name: str,
             version: Optional[str],
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ):
-        req = AsyncRequest(server=self.server, endpoint='/package/deactivate', jsn={'name': name, 'version': version})
+        req = AsyncRequest(
+            server=self.server,
+            endpoint='/package/deactivate',
+            jsn={'name': name, 'version': version},
+            cancel=self.autocancel,
+        )
+
         return req.run(callback=progress_callback)
-    
+
     def remove(
             self,
             name: str,
             version: Optional[str],
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ):
-        req = AsyncRequest(server=self.server, endpoint='/package/remove', jsn={'name': name, 'version': version})
+        req = AsyncRequest(
+            server=self.server,
+            endpoint='/package/remove',
+            jsn={'name': name, 'version': version},
+            cancel=self.autocancel,
+        )
         return req.run(callback=progress_callback)
-    
+
     def list(
             self,
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ):
-        req = AsyncRequest(server=self.server, endpoint='/package/list', method='get')
+        req = AsyncRequest(
+            server=self.server,
+            endpoint='/package/list',
+            method='get',
+            cancel=self.autocancel,
+        )
         return req.run(callback=progress_callback)
 
 
 class HivemindClient(object):
     # Async client
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, autocancel: bool = True):
         self.server = DaemonLink(host=host, port=port)
-        self.package = PackageClient(host=host, port=port)
+        self.package = PackageClient(host=host, port=port, autocancel=autocancel)
+        self.autocancel = autocancel
 
     def heartbeat(self) -> Dict:
         url = f'http://{self.server.host}:{self.server.port}/'
@@ -93,19 +126,24 @@ class HivemindClient(object):
 
     def run(
             self,
-            target: str, 
+            target: str,
             params: Dict = None,
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ) -> Dict:
         if not params:
             params = {}
-        req = AsyncRequest(server=self.server, endpoint=f'/run/{target}', jsn=params)
+        req = AsyncRequest(
+            server=self.server,
+            endpoint=f'/run/{target}',
+            jsn=params,
+            cancel=self.autocancel,
+        )
         return req.run(callback=progress_callback)
 
     def _run(
             self,
             target_package: str,
-            target_model: str, 
+            target_model: str,
             params: Dict = None,
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ) -> Dict:
@@ -114,11 +152,16 @@ class HivemindClient(object):
         # Which might have implications for serialization (tensor protobuf?)
         if not params:
             params = {}
-        req = AsyncRequest(server=self.server, endpoint=f'/_run/{target_package}/{target_model}', jsn=params)
+        req = AsyncRequest(
+            server=self.server,
+            endpoint=f'/_run/{target_package}/{target_model}',
+            jsn=params,
+            cancel=self.autocancel,
+        )
         return req.run(callback=progress_callback)
 
     def result(
-            self, 
+            self,
             result_hash: str
     ) -> bytes:
         url = f'http://{self.server.host}:{self.server.port}/result/{result_hash}'

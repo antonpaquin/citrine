@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as xml
 from typing import Optional, Dict, List, Any
 
-from PySide2 import QtWidgets
+from PySide2 import QtWidgets, QtWebEngineWidgets
 from PySide2.QtCore import QObject, Qt
 
 import hivemind_ui.util
@@ -16,6 +16,11 @@ widgets = {
     for k, v in QtWidgets.__dict__.items()
     if not k.startswith('_')
 }
+widgets.update({
+    k: v
+    for k, v in QtWebEngineWidgets.__dict__.items()
+    if not k.startswith('_')
+})
 
 qt_vals = Qt.__dict__
 

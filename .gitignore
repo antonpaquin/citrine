@@ -15,3 +15,4 @@ hivemind-daemon/test
 hivemind-daemon/onnx
 .gitconfig
 activate
+mock-repo/
