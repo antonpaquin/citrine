@@ -1,6 +1,8 @@
 import asyncio
+import logging
 from queue import Queue
 import threading
+from typing import *
 from uuid import uuid4
 
 import stopit
@@ -8,6 +10,8 @@ import stopit
 from hivemind_daemon import errors, package
 from hivemind_daemon.server.json import HivemindEncoder
 
+
+logger = logging.getLogger(__name__)
 
 primary_job_queue = Queue(maxsize=1000)
 job_cache = {}
@@ -43,10 +47,11 @@ class AsyncFuture(object):
     Utility for crossing thread boundaries from within an asyncio event loop
     """
     
-    def __init__(self, fn, args=None, kwargs=None):
+    def __init__(self, fn, args=None, kwargs=None, request_info=None):
         self.fn = fn
         self.args = args or ()
         self.kwargs = kwargs or {}
+        self.request_info = request_info
         
         self.result_val = None
         self.result_exc = None
@@ -66,6 +71,7 @@ class AsyncFuture(object):
         job_cache[self.uid] = self
         
     def run(self, thread):
+        logger.debug('Executing async job')
         if self.state != FutureState.INITIALIZED:
             return
         try:
@@ -73,12 +79,15 @@ class AsyncFuture(object):
             self.transition(FutureState.RUNNING)
             self.result_val = self.fn(*self.args, **self.kwargs)
             self.transition(FutureState.DONE)
+            logger.debug('Async job complete')
         except errors.JobInterrupted as e:
             self.result_exc = e
+            logger.info('Async job interrupted')
         except Exception as e:
             self.transition(FutureState.ERROR)
             self.result_exc = e
-            
+            logger.warning('Async job failed')
+
         self.set_done()
         
     def transition(self, to_state: int):
@@ -115,14 +124,15 @@ class AsyncFuture(object):
 HivemindEncoder.register_encoder(AsyncFuture, lambda fut: fut.to_dict())
 
 
-async def run_in_worker(fn, args=None, kwargs=None):
-    fut = AsyncFuture(fn, args, kwargs)
+async def run_in_worker(fn, args=None, kwargs=None, request_info=None):
+    fut = AsyncFuture(fn, args, kwargs, request_info)
     primary_job_queue.put(fut)
     return await fut.result()
 
 
-def run_async(fn, args=None, kwargs=None):
-    fut = AsyncFuture(fn, args, kwargs)
+def run_async(fn, args=None, kwargs=None, request_info=None):
+    fut = AsyncFuture(fn, args, kwargs, request_info)
+    logger.debug(f'Queueing async job {fut.uid}', {'async_job_id': fut.uid})
     primary_job_queue.put(fut)
     return fut
 
@@ -133,19 +143,26 @@ def get_future(uid: str) -> AsyncFuture:
     raise errors.NoSuchJob(f'No such job {uid}', data={'uid': uid})
 
 
+def get_active_job() -> Optional[AsyncFuture]:
+    return getattr(thread_local, 'active_job', None)
+
+
 def worker_thread(worker_id: int):
+    logger.info(f'Worker {worker_id} initialized')
     self = threading.current_thread()
     while True:
         job: AsyncFuture = primary_job_queue.get()
         thread_local.active_job = job
+        logger.debug('Worker starting async job')
         package.db.start_connection()
         try:
             job.run(self)
         except errors.JobInterrupted:
             pass
         package.db.end_connection(commit=(job.state == FutureState.DONE))
+        logger.debug('Worker finished async job')
         thread_local.active_job = None
-        
+
 
 def job_put_extra(key: str, value: any):
     fut: AsyncFuture = thread_local.active_job
@@ -153,5 +170,13 @@ def job_put_extra(key: str, value: any):
 
 
 def init_workers(n_workers: int):
-    threadpool = [threading.Thread(target=worker_thread, args=(idx,), daemon=True) for idx in range(n_workers)]
+    logger.info('Booting threadpool')
+    threadpool = []
+    for idx in range(n_workers):
+        threadpool.append(threading.Thread(
+            name=f'worker-{idx}',
+            target=worker_thread,
+            args=(idx,),
+            daemon=True,
+        ))
     [t.start() for t in threadpool]

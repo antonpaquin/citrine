@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Callable, List
 
 import cerberus
@@ -6,39 +7,49 @@ import numpy as np
 from hivemind_daemon import errors, nn, package, storage
 
 
+logger = logging.getLogger(__name__)
+
 endpoint_lookup = {}  # type: Dict[str, List[Endpoint]]
 
 
 def call(name: str, inputs: Dict = None) -> Dict:
+    logger.info(f'Attempting to call endpoint {name}', {'endpoint': name})
     endpoint = get_active_endpoint(name)
     if endpoint.input_validator:
         v = cerberus.Validator(schema=endpoint.input_validator)
         if not v.validate(inputs):
             raise errors.ValidationError(v.errors)
         inputs = v.document
-        
+
     try:
+        logger.debug('Beginning 3rd party input processing')
         model_inputs = endpoint.process_input(inputs)
+        logger.debug('Input processing completed')
     except errors.HivemindException:
         raise
     except Exception as e:
+        logger.info('Input processing failed', {'error': e, 'args': e.args})
         raise errors.PackageError(f'Error in processing inputs for model {name}: {e}')
 
     nn.assert_like_input(model_inputs)
     db_model = package.db.DBModel.from_id_name(endpoint.package_id, endpoint.model)
     model_outputs = nn.run_model(storage.get_model_file(db_model), model_inputs)
-    
+
     try:
+        logger.debug('Beginning 3rd party output processing')
         outputs = endpoint.process_output(model_outputs)
+        logger.debug('Output processing completed')
     except errors.HivemindException:
         raise
     except Exception as e:
+        logger.info('Output processing failed', {'error': e, 'args': e.args})
         raise errors.PackageError(f'Error in processing outputs for model {name}: {e}')
-    
+
     return outputs
 
 
 def call_raw(package_name: str, model_name: str, inputs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    raise NotImplementedError('Todo!')
     nn.assert_like_input(inputs)
     # TODO call_raw violates rules
     # It's actually very broken in this state
@@ -47,6 +58,7 @@ def call_raw(package_name: str, model_name: str, inputs: Dict[str, np.ndarray]) 
     # might be able to get away with it by guaranteeing that only one package with a given name can be active at a time
     # In sql I can do that with a new table, but it's messier than what we have now
     # (create table ActivePackage (package_id rowid, package_name unique str))
+    # (can I set a DB constraint on a view / query table?)
 
     # Note that 'active' is mostly for constraining 'module.py', and `call_raw` can sidestep that by just sending numpy
     # directly. So is it OK to ignore here?
@@ -59,18 +71,18 @@ class Endpoint(object):
     def __init__(
             self,
             name: str,
+            package_id: int,
             model: str,
             process_input: Callable[[Dict], Dict[str, np.ndarray]],
             process_output: Callable[[Dict[str, np.ndarray]], Dict],
             input_validator: Dict = None,
     ):
         self.name = name
+        self.package_id = package_id
         self.model = model
         self.process_input = process_input
         self.process_output = process_output
         self.input_validator = input_validator
-
-        self.package_id = package.load.get_loading_package_id()  # type: int
 
 
 def create_endpoint(
@@ -80,6 +92,7 @@ def create_endpoint(
         model: str = None,
         input_validator: Dict = None,
 ) -> None:
+    logger.info(f'Creating endpoint {name}', {'endpoint': name})
     # TODO: validate create endpoint
     # This is basically the last staging area before whatever's in the wrapper becomes part of the API
     # Not that there needs to be more validation here,
@@ -96,14 +109,19 @@ def create_endpoint(
 
     if name not in endpoint_lookup:
         endpoint_lookup[name] = []
-        
+
+    package_id = package.load.get_loading_package_id()  # type: int
+    package.db.mark_package_endpoint(package_id, name)
+
     endpoint_lookup[name].append(Endpoint(
         name=name,
+        package_id=package_id,
         model=model,
         process_input=process_input,
         process_output=process_output,
         input_validator=input_validator,
     ))
+    logger.info(f'Endpoint {name} created for package id {package_id}', {'endpoint': name, 'package_id': package_id})
 
 
 def get_active_endpoint(name: str) -> 'Endpoint':

@@ -1,10 +1,14 @@
+import logging
 from typing import Dict
 
 import numpy as np
 import onnxruntime
 
-from hivemind_daemon import storage, errors
+from hivemind_daemon import errors
 from hivemind_daemon.util import truncate_str
+
+
+logger = logging.getLogger(__name__)
 
 
 def _get_session(model_file: str) -> onnxruntime.InferenceSession:
@@ -60,11 +64,14 @@ def run_model(
     # I want to hold sessions in an LRU-like cache
     # (or have it be very configurable)
     # With possibly eviction weighted by memory size of the sessions
+    logger.debug(f'Starting ONNX session for {model_file}', {'model': model_file})
     session = _get_session(model_file)
     inputs = coerce_types(raw_inputs, session)
     outputs = [n.name for n in session.get_outputs()]
     try:
+        logger.debug('Running neural network')
         arr_out = session.run(outputs, inputs)
+        logger.debug('Neural network inference complete')
     except onnxruntime.capi.onnxruntime_pybind11_state.InvalidArgument as e:
         raise errors.ModelRunError('Failed to run model', data=str(e))
     return {

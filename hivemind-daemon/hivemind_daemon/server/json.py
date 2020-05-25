@@ -1,7 +1,11 @@
 from json import JSONEncoder
+import logging
 from typing import Any, Callable
 
 import numpy as np
+
+
+logger = logging.getLogger(__name__)
 
 
 class HivemindEncoder(JSONEncoder):
@@ -11,7 +15,9 @@ class HivemindEncoder(JSONEncoder):
         for cls, fn in HivemindEncoder.encoder_registry:
             if isinstance(o, cls):
                 return fn(o)
-        return f'Unserializable type <{type(o).__name__}>'
+        type_name = type(o).__name__
+        logger.warning(f'Tried to serialize unfamiliar type {type_name}', {'type_name': type_name})
+        return f'Unserializable type <{type_name}>'
 
     @staticmethod
     def register_encoder(cls: Any, fn: Callable[[Any], Any]) -> None:

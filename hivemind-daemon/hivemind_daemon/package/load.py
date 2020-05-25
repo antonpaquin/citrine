@@ -1,6 +1,6 @@
 import importlib.util
 import json
-import os
+import logging
 import threading
 from typing import Dict, Any, Optional
 
@@ -9,6 +9,8 @@ import cerberus
 import hivemind_daemon.package.db as db
 from hivemind_daemon import storage, errors
 
+
+logger = logging.getLogger(__name__)
 
 package_validator = {
     'name': {
@@ -68,16 +70,19 @@ def load_package_json(name):
 
 def get_loading_package_id():
     if not load_context_lock.locked():
-        raise errors.InternalError('No package is currently loading')
+        return None
     return load_context['package_id']
 
 
 def init_packages():
+    logger.info('Loading existing packages on startup')
+    db.get_conn()
     for db_package in db.DBPackage.get_active_packages():
         load_package(db_package)
         
         
 def activate_package(name: str, version: Optional[str]):
+    logger.info(f'Setting package {name}v{version} to active', {'package_name': name, 'package_version': version})
     # TODO enforce only one active
     # only one version of a package with a given name should be active at a time
     if version is not None:
@@ -89,6 +94,7 @@ def activate_package(name: str, version: Optional[str]):
 
 
 def deactivate_package(name: str, version: Optional[str]):
+    logger.info(f'Setting package {name}v{version} to inactive', {'package_name': name, 'package_version': version})
     if version is not None:
         db_package = db.DBPackage.from_name_version(name, version)
     else:
@@ -120,6 +126,8 @@ class PackageContext(object):
 
 
 def load_package(db_package: db.DBPackage):
+    log_ctx = {'package_name': db_package.name, 'package_version': db_package.version}
+    logger.info('Beginning to load package module', log_ctx)
     module_file = storage.get_package_module(db_package)
 
     # I dunno where this actually shows up, but it's not a problem yet. Maybe multiple imports?
@@ -128,10 +136,12 @@ def load_package(db_package: db.DBPackage):
     mod = importlib.util.module_from_spec(spec)
     try:
         with PackageContext(package_id=db_package.rowid):
+            logger.info('BEGIN loading module', log_ctx)
             spec.loader.exec_module(mod)
+            logger.info('END loading module', log_ctx)
     except errors.HivemindException:
         raise
     except Exception as e:
+        logger.warning('FAIL loading module', log_ctx)
         raise errors.PackageInstallError(f'Failed to load module for package {db_package.name}', data=str(e))
-
 

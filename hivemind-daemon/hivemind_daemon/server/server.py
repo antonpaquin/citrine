@@ -1,6 +1,6 @@
 import json
+import logging
 import os
-from typing import Callable, Awaitable, Dict
 
 import aiofiles
 from aiohttp import web
@@ -10,113 +10,15 @@ import numpy as np
 import hivemind_daemon
 from hivemind_daemon import errors, storage, package
 from hivemind_daemon.server.json import HivemindEncoder
+from hivemind_daemon.server.util import *
 from hivemind_daemon.server.parallel import AsyncFuture, run_async, get_future
 
 
-def error_handler(f):
-    async def wrapped(request):
-        try:
-            return await f(request)
-        except errors.HivemindException as e:
-            return web.Response(
-                body=json.dumps(e.to_dict()),
-                status=e.status_code,
-            )
-    return wrapped
+logger = logging.getLogger(__name__)
 
-
-def wrap_async(fn: Callable[[web.Request], Awaitable[AsyncFuture]]):
-    @error_handler
-    async def wrapped(request: web.Request) -> web.Response:
-        fut = await fn(request)
-        return web.Response(
-            body=json.dumps(fut, cls=HivemindEncoder),
-            status=200
-        )
-    return wrapped
-
-
-def wrap_sync(fn: Callable[[web.Request], Awaitable[AsyncFuture]]):
-    @error_handler
-    async def wrapped(request: web.Request) -> web.Response:
-        fut = await fn(request)
-        result = await fut.result()
-        if result is None:
-            result = {'status': 'OK'}
-        return web.Response(
-            body=json.dumps(result, cls=HivemindEncoder),
-            status=200,
-        )
-    return wrapped
-
-
-# </weird abstract asynchronous craziness>
-# In general, an endpoint for aiohttp server should be of type (web.Request -> web.Response)
-# To facilitate keeping a synchronous and asynchronous version of the API, instead all these functions are of type
-# (web.Request -> AsyncFuture) which can be awaited via .result() or just returned on its own as a handle on a job in 
-# progress.
-# wrap_sync and wrap_async handle converting those cases to web.Response properly
-
-
-async def get_formdata(request: web.Request) -> Dict:
-    res = {}
-    async for formdata in await request.multipart():
-        res[formdata.name] = await formdata.text()
-    return res
-
-
-async def _package_install_spec(request: web.Request):
-    if request.content_type == 'multipart/form-data':
-        formdata = await get_formdata(request)
-        if 'specfile' not in formdata:
-            raise errors.InvalidInput('Missing specfile')
-        try:
-            jsn = json.loads(formdata['specfile'])
-        except json.JSONDecodeError:
-            raise errors.ValidationError('specfile was not valid json')
-    else:
-        try:
-            jsn = await request.json()
-        except json.JSONDecodeError:
-            raise errors.ValidationError('Request was not json')
-    if 'localfile' in jsn:
-        validator = cerberus.Validator(schema={
-            'localfile': {
-                'type': 'string',
-                'required': True,
-            }
-        })
-    elif 'url' in jsn:
-        validator = cerberus.Validator(schema={
-            'url': {
-                'type': 'string',
-                'required': True,
-            },
-            'hash': {
-                'type': 'string',
-                'required': True,
-            },
-        })
-    else:
-        raise errors.ValidationError('You must provide one of "localfile" or "url"')
-    if not validator.validate(jsn):
-        raise errors.ValidationError('Request failed to validate', data=validator.errors)
-    return validator.document
-
-
-async def expect_json(request: web.Request, validator: cerberus.Validator) -> Dict:
-    try:
-        jsn = await request.json()
-    except json.JSONDecodeError:
-        raise errors.ValidationError('Request does not appear to be json')
-    if not validator.validate(jsn):
-        raise errors.ValidationError('Input failed to validate', data=validator.errors)
-    return validator.document
-
-
-# Start endpoint defs
 
 async def run_network(request: web.Request) -> AsyncFuture:
+    logger.debug('Handling request for method run')
     if not request.body_exists:
         jsn = {}
     else:
@@ -134,13 +36,14 @@ async def run_network(request: web.Request) -> AsyncFuture:
     return run_async(hivemind_daemon.core.call, kwargs={
         'name': request.match_info['name'], 
         'inputs': jsn,
-    })
+    }, request_info=make_request_info('run'))
 
 
 async def run_network_raw(request: web.Request) -> AsyncFuture:
     """
     low-level run exactly this network with exactly these inputs
     """
+    logger.debug('Handling request for method _run')
     if not request.body_exists:
         jsn = {}
     else:
@@ -158,25 +61,26 @@ async def run_network_raw(request: web.Request) -> AsyncFuture:
         'package_name': request.match_info['packagename'],
         'model_name': request.match_info['modelname'],
         'inputs': model_args,
-    })
+    }, request_info=make_request_info('_run'))
 
 
 async def package_fetch(request: web.Request) -> AsyncFuture:
     """
     Fetch means download and put in DB, but don't load / run any code
     """
-    params = await _package_install_spec(request)
+    logger.debug('Handling request for method package.fetch')
+    params = await package_install_spec(request)
     if 'localfile' in params:
         return run_async(package.install.install_package_file, kwargs={
             'localfile': params['localfile'],
             'activate': False,
-        })
+        }, request_info=make_request_info('package.fetch'))
     elif 'url' in params and 'hash' in params:
         return run_async(package.install.install_package_url, kwargs={
             'url': params['url'],
             'package_hash': params['hash'],
             'activate': False,
-        })
+        }, request_info=make_request_info('package.fetch'))
     else:
         raise errors.InternalError('Invalid package spec made it through validation')
 
@@ -185,23 +89,25 @@ async def package_install(request: web.Request) -> AsyncFuture:
     """
     Fetch means download and put in DB, then load the module and make it available
     """
-    params = await _package_install_spec(request)
+    logger.debug('Handling request for method package.install')
+    params = await package_install_spec(request)
     if 'localfile' in params:
         return run_async(package.install.install_package_file, kwargs={
             'localfile': params['localfile'],
             'activate': True,
-        })
+        }, request_info=make_request_info('package.install'))
     elif 'url' in params and 'hash' in params:
         return run_async(package.install.install_package_url, kwargs={
             'url': params['url'],
             'package_hash': params['hash'],
             'activate': True,
-        })
+        }, request_info=make_request_info('package.install'))
     else:
         raise errors.InternalError('Invalid package spec made it through validation')
 
 
 async def package_activate(request: web.Request) -> AsyncFuture:
+    logger.debug('Handling request for method package.activate')
     validator = cerberus.Validator(schema={
         'name': {
             'type': 'string',
@@ -218,10 +124,11 @@ async def package_activate(request: web.Request) -> AsyncFuture:
     return run_async(package.load.activate_package, kwargs={
         'name': params['name'],
         'version': params['version'],
-    })
+    }, request_info=make_request_info('package.activate'))
 
 
 async def package_deactivate(request: web.Request) -> AsyncFuture:
+    logger.debug('Handling request for method package.deactivate')
     # Maybe I can come up with a way to join these two?
     # Just needs a good metaphor for the api
     validator = cerberus.Validator(schema={
@@ -240,10 +147,11 @@ async def package_deactivate(request: web.Request) -> AsyncFuture:
     return run_async(package.load.deactivate_package, kwargs={
         'name': params['name'],
         'version': params['version'],
-    })
+    }, request_info=make_request_info('package.deactivate'))
 
 
 async def package_remove(request: web.Request) -> AsyncFuture:
+    logger.debug('Handling request for method package.remove')
     validator = cerberus.Validator(schema={
         'name': {
             'type': 'string',
@@ -260,14 +168,16 @@ async def package_remove(request: web.Request) -> AsyncFuture:
     return run_async(package.install.remove_package, kwargs={
         'name': params['name'],
         'version': params['version'],
-    })
+    }, request_info=make_request_info('package.remove'))
 
 
 async def package_list(request: web.Request) -> AsyncFuture:
-    return run_async(package.db.list_packages)
+    logger.debug('Handling request for method package.list')
+    return run_async(package.db.list_packages, request_info=make_request_info('package.list'))
 
 
 async def heartbeat(request: web.Request) -> web.Response:
+    logger.debug('Handling request for method heartbeat')
     return web.Response(body=json.dumps({
         'status': 'OK',
         'service': 'hivemind-daemon',
@@ -276,6 +186,7 @@ async def heartbeat(request: web.Request) -> web.Response:
 
 
 async def get_result(request: web.Request) -> web.Response:
+    logger.debug('Handling request for method result')
     fpath = os.path.join(storage.results_path, request.match_info['name'])
     if not os.path.isfile(fpath):
         return web.Response(status=404)
@@ -286,6 +197,7 @@ async def get_result(request: web.Request) -> web.Response:
 
 @error_handler
 async def async_status(request: web.Request) -> web.Response:
+    logger.debug('Handling request for method async.status')
     fut = get_future(request.match_info['uid'])
     return web.Response(
         body=json.dumps(fut, cls=HivemindEncoder),
@@ -295,6 +207,7 @@ async def async_status(request: web.Request) -> web.Response:
 
 @error_handler
 async def async_cancel(request: web.Request) -> web.Response:
+    logger.debug('Handling request for method async.cancel')
     fut = get_future(request.match_info['uid'])
     fut.interrupt()
     return web.Response(
@@ -304,6 +217,7 @@ async def async_cancel(request: web.Request) -> web.Response:
 
 
 def build_app():
+    logger.debug('Initializing async server')
     app = web.Application()
 
     app.add_routes([
@@ -331,10 +245,12 @@ def build_app():
             method('/async' + route, wrap_async(fn))
         ])
 
+    logger.debug('Async server ready')
     return app
 
 
 def run_server(host, port):
+    logger.info(f'Running app at {host}:{port}', {'host': host, 'port': port})
     web.run_app(
         app=build_app(),
         host=host,

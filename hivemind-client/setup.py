@@ -8,6 +8,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'requests',
+        'progress',
     ],
     entry_points={
         'console_scripts': [

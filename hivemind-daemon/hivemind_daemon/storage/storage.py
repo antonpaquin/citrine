@@ -1,3 +1,4 @@
+import logging
 import os
 
 import hivemind_daemon.package.db as db
@@ -30,6 +31,8 @@ package_path = os.path.join(root_path, package_rel)
 download_rel = 'downloads'
 download_path = os.path.join(root_path, download_rel)
 
+logger = logging.getLogger(__name__)
+
 
 def get_package_module(package: db.DBPackage) -> str:
     return os.path.join(package_path, package.install_path, 'module.py')
@@ -44,6 +47,7 @@ def get_model_file(model: db.DBModel) -> str:
 
 
 def init_storage():
+    logger.info(f'Initializing hivemind storage at {root_path}', {'root_path': root_path})
     for path in [
         root_path,
         results_path,

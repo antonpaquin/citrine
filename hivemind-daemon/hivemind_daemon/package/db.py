@@ -1,3 +1,4 @@
+import logging
 import os
 import sqlite3
 from typing import *
@@ -10,8 +11,13 @@ from hivemind_daemon.package.orm import DBPackage, DBModel
 connection_pool = threading.local()
 connection_pool.conn = None
 
+package_endpoints = {}  # type: Dict[int, List[str]]
+
+logger = logging.getLogger(__name__)
+
 
 def _db_path():
+    logger.debug('Initializing DB connection')
     return os.path.join(storage.root_path, 'package.db')
 
 
@@ -22,8 +28,10 @@ def start_connection():
 def end_connection(commit: bool):
     conn = connection_pool.conn  # type: sqlite3.Connection
     if commit:
+        logger.debug('Request completed successfully, will commit outstanding DB transactions')
         conn.commit()
     else:
+        logger.info('Request failed, rolling back database')
         conn.rollback()
     conn.close()
     connection_pool.conn = None
@@ -35,6 +43,14 @@ def get_conn():
         # worker threads should have something available via start_connection()
         connection_pool.conn = sqlite3.connect(_db_path())
     return connection_pool.conn
+
+
+def mark_package_endpoint(package_id: int, endpoint: str):
+    # Transient and populated as packages are loaded and create their endpoints
+    # This isn't used for anything internal, it's just for showing what endpoints a package owns under /package/list
+    if package_id not in package_endpoints:
+        package_endpoints[package_id] = []
+    package_endpoints[package_id].append(endpoint)
 
 
 class Cursor:
@@ -61,6 +77,7 @@ def init_db():
 
         
 def _init_db():
+    logger.info('Creating new Hivemind Database')
     conn = get_conn()
     with Cursor(conn) as cur:
         cur.execute(DBPackage.create_table)
@@ -69,6 +86,10 @@ def _init_db():
 
 
 def install_package(package_meta: Dict, install_id: str) -> DBPackage:
+    logger.info('Installing new package to database', {
+        'package_name': package_meta['name'],
+        'package_version': package_meta['version'],
+    })
     try:
         db_package = DBPackage(
             name=package_meta['name'],
@@ -79,9 +100,15 @@ def install_package(package_meta: Dict, install_id: str) -> DBPackage:
         )
         db_package.insert()
     except sqlite3.IntegrityError as e:
+        logger.warning('Database rejected package installation')
         raise errors.PackageInstallError(f'Package {package_meta["name"]} already exists', data=str(e))
 
     for model_name, model_spec in package_meta['model'].items():
+        logger.info(f'Installing model {model_name} for package {package_meta["name"]}', {
+            'package_name': package_meta['name'],
+            'package_version': package_meta['version'],
+            'model_name': model_name,
+        })
         install_path = os.path.join(install_id, f'{model_name}.{model_spec["type"]}')
         model = DBModel(
             package_id=db_package.rowid,
@@ -95,7 +122,11 @@ def install_package(package_meta: Dict, install_id: str) -> DBPackage:
 
 
 def list_packages() -> Dict:
-    return {
-        'packages': list(DBPackage.get_all())
-    }
+    packages = []
+    for pkg in DBPackage.get_all():
+        entry = pkg.to_dict()
+        if pkg.rowid in package_endpoints:
+            entry['endpoints'] = package_endpoints[pkg.rowid]
+        packages.append(entry)
+    return {'packages': packages}
 

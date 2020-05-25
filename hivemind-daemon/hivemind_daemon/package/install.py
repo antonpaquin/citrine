@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import tempfile
@@ -10,9 +11,13 @@ import hivemind_daemon.package.db as db
 from hivemind_daemon.package.load import _set_package_active, load_package_json
 
 
+logger = logging.getLogger(__name__)
+
+
 def install_package_file(localfile: str, activate: bool) -> Dict:
     # The cross-package complexity of this is a little annoying
     # Take advantage of opportunities to simplify
+    logger.info(f'Installing new package from file {localfile}', {'localfile': localfile})
 
     if not os.path.exists(localfile):
         raise errors.PackageInstallError(f'Could not find local package {localfile}', 400)
@@ -28,6 +33,7 @@ def install_package_file(localfile: str, activate: bool) -> Dict:
                         zip_f.extract(fname, tmpdir)
             except zipfile.BadZipFile:
                 raise errors.PackageInstallError(f'Package at {localfile} was not a valid zip archive')
+        logger.debug(f'Package unpacked to {tmpdir}', {'tmpdir': tmpdir})
 
         package_meta = load_package_json(os.path.join(tmpdir, 'package.json'))
         install_id = str(uuid.uuid4())
