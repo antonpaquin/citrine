@@ -110,7 +110,7 @@ class PackageClient(object):
 
 
 class HivemindClient(object):
-    # Async client
+    # Synchronous consumer of the asynchronous API
     def __init__(self, host: str, port: int, autocancel: bool = True):
         self.server = DaemonLink(host=host, port=port)
         self.package = PackageClient(host=host, port=port, autocancel=autocancel)

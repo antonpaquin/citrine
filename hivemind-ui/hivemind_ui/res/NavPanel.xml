@@ -3,4 +3,5 @@
     <ConnectionNavButton/>
     <ConfigNavButton/>
     <PackageNavButton/>
+    <InterfaceNavButton/>
 </NavPanel>

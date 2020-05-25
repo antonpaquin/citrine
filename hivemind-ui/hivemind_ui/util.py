@@ -1,4 +1,12 @@
 import os
+import threading
+
+
+def threaded(f):
+    def wrapped(*args):
+        t = threading.Thread(target=f, daemon=True, args=args)
+        t.start()
+    return wrapped
 
 
 def get_root_path():

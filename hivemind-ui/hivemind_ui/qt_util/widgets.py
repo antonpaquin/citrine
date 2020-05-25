@@ -46,13 +46,13 @@ class MetaBox(qt_xml.XmlComponent):
     # No setitem
 
 
-@qt_xml.register('HBox')
+@qt_xml.register_xml('HBox')
 class HBox(MetaBox):
     def __init__(self):
         super().__init__(QtWidgets.QHBoxLayout)
 
 
-@qt_xml.register('VBox')
+@qt_xml.register_xml('VBox')
 class VBox(MetaBox):
     def __init__(self):
         super().__init__(QtWidgets.QVBoxLayout)

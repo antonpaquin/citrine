@@ -1,10 +1,7 @@
-from PySide2 import QtWidgets
-from PySide2.QtCore import Qt
-
-from hivemind_ui.qt_util import NavButton, VBox, qt_xml
+from hivemind_ui.qt_util import NavButton, VBox, register_xml
 
 
-@qt_xml.register('StartupPage')
+@register_xml('StartupPage')
 class StartupPage(VBox):
     def __init__(self):
         super(StartupPage, self).__init__()
@@ -12,7 +9,7 @@ class StartupPage(VBox):
         self.show()
 
 
-@qt_xml.register('StartupNavButton')
+@register_xml('StartupNavButton')
 class StartupNavButton(NavButton):
     text = 'startup'
     panel_class = StartupPage

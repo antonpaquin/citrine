@@ -2,7 +2,7 @@ from typing import Optional
 
 from PySide2.QtWidgets import QApplication, QWidget
 
-from hivemind_ui import ui, util
+from hivemind_ui import ui, util, interface_pkg, js_bridge
 
 
 _root = None  # type: Optional[ui.MainWrapper]
@@ -26,7 +26,13 @@ def get_stylesheet():
     return style
 
 
+def init():
+    interface_pkg.init_interfaces()
+    js_bridge.init_server()
+
+
 def main():
+    init()
     app = QApplication([])
     app.setStyleSheet(get_stylesheet())
     # If you don't init the main window and exec the app in the same context, the whole thing freezes / refuses to start
@@ -34,4 +40,5 @@ def main():
     # Super annoying, but if this is still here I haven't figured out how to get around it
     w = build_window()
     exit_code = app.exec_()
+    print('Cleaning up...')
     exit(exit_code)

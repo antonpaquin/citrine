@@ -9,65 +9,16 @@ import cerberus
 import hivemind_client
 
 import hivemind_ui.config as config
-import hivemind_ui.interface.download as download
+import hivemind_ui.interface_pkg.download as download
 
 
-"""
-
-So I've got a bunch of packages on daemon that collectively imply a bunch of interfaces should be available on UI
-
-How does the UI get them?
-
-1. The UI downloads them
-
-2. The daemon downloads them and then serves to the UI
-
-1 is nice but tough to manage. 
-2 breaks encapsulation -- the server should be able to operate without realizing that a UI even exists
-
-Say we go 1.
-    - How does the UI figure out what to download?
-    - What does it do if the download fails?
-    - How does it react to changes in the daemon's packages?
-    - How does someone test locally?
-
-If it fails: throw an error, eventually alert the user
-How does it react to change in wanted interfaces: change the interfaces
-How does someone test locally: manually stick the package in the proper directory and/or I can build an interface for it
-
-How does it figure out what to download?
-    - In the interfaces menu, stick two buttons: synchronize, manage
-    - Synchronize just does it as automatically as I can manage: fetch all interfaces for given packages
-        - In most cases 'all' will mean 0 or 1
-    - Manage opens a dialog where we can see package -> interface relationship -- maybe a 2 column table?
-    - Once it's displayed like that, it's viable to just hit the button and it installs or removes
-    
-How does synchronize know?
-    - Somewhere on the web there's a package -> interface mapping: the index
-    - Specify the index url via config
-    - Try to download and cache it each time you synchronize
-
-So a lot of this is starting to depend on web infrastructure -- these files are available at that website, etc
-Seems to be a complete picture, without that, but I was hoping on sticking things in AWS _after_ all this was all done
-and ready to demo
-
-Strategy:
-    - Ignore the "manage" bit for now, which includes removing interfaces
-    - Stub out / mock network calls
-        - Eventually: GET index --> GET interface
-        - For now: index at file --> interface at file
-        
-The form of the interface in the index (package -> interface):
-    - I can have (name) or (url, hash)
-        package -> name -> (url, hash) -> zipfile:
-            - name implies another index: name -> (url, hash) -> zipfile
-            - Maybe this exists in the package repo?
-            - kinda long of a chain
-        package -> (url, hash) -> zipfile:
-            - somewhat harder to update, maybe?
-            - I need a name -> (url, hash) anyway -- `hivemind-ui install foo kinda thing`
-                - Not that there's a cli, but that will drive the 'manage' part of things
-"""
+__all__ = [
+    'init_interfaces',
+    'synchronize',
+    'list_interfaces',
+    'Interface',
+    'InterfaceView',
+]
 
 
 metadata_validator = {
@@ -84,7 +35,7 @@ metadata_validator = {
         'keysrules': {
             'type': 'string',
         },
-        'values': {
+        'valuesrules': {
             'type': 'dict',
             'schema': {
                 'root': {
@@ -112,6 +63,54 @@ package_interface_index = None
 interface_index = None
 
 
+class Interface(object):
+    def __init__(
+            self,
+            name: str,
+            human_name: str,
+            views: List['InterfaceView'],
+            requires_daemon: List[str],
+    ):
+        self.name = name
+        self.human_name = human_name
+        self.views = views
+        self.requires_daemon = requires_daemon
+
+    @staticmethod
+    def load(fpath: str) -> 'Interface':
+        metadata_fname = os.path.join(fpath, 'meta.json')
+        meta = parse_metadata_file(metadata_fname)
+        views = []
+        for name, view_meta in meta['views'].items():
+            rel_path = view_meta['root'].split('/')
+            views.append(InterfaceView(
+                name=name, 
+                root=os.path.join(fpath, *rel_path),
+                page=view_meta['page']
+            ))
+        return Interface(
+            name=meta['name'], 
+            human_name=meta['human_name'], 
+            views=views, 
+            requires_daemon=meta['requires_daemon']
+        )
+
+
+class InterfaceView(object):
+    def __init__(
+            self,
+            name: str,
+            root: str,
+            page: str,
+    ):
+        self.name = name
+        self.root = root
+        self.page = page
+        
+    def get_page(self):
+        return os.path.join(self.root, self.page)
+
+
 def init_interfaces():
     interface_dir = os.path.join(config.get_config('storage.rootpath'), 'interfaces')
     if not os.path.isdir(interface_dir):
@@ -129,6 +128,15 @@ def synchronize():
         else:
             fname = download.get_file(url, hashsum)
         install_from_zip(fname)
+
+
+def list_interfaces() -> List[Interface]:
+    interface_dir = os.path.join(config.get_config('storage.rootpath'), 'interfaces')
+    res = []
+    for fname in os.listdir(interface_dir):
+        fpath = os.path.join(interface_dir, fname)
+        res.append(Interface.load(fpath))
+    return res
 
 
 def install_from_zip(zip_fname: str):
@@ -159,7 +167,12 @@ def install_from_temp(tmpdir: str):
     os.makedirs(interface_fpath)
 
     for fname in os.listdir(tmpdir):
-        shutil.copy(fname, interface_fpath)
+        fpath = os.path.join(tmpdir, fname)
+        fdest = os.path.join(interface_fpath, fname)
+        if os.path.isdir(fpath):
+            shutil.copytree(fpath, fdest)
+        else:
+            shutil.copy(fpath, fdest)
 
 
 def check_wanted_interfaces() -> List[str]:

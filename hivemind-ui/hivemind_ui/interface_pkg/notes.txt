@@ -1,0 +1,93 @@
+So it comes time to figure out UI packages
+
+What does a UI package need to do?
+Ultimately, deliver a view to the UI
+    which is a bundle of html / js / css / assets
+    which is effectively just a file structure
+    (I kinda really don't want to deal with cgi in this case)
+
+How do I want to deal with it?
+I kinda like the idea of having a metadata file
+
+Converging on
+root directory: meta.json, + other stuff
+meta.json points to / names directories in root dir which hold web packs
+
+Like
+{
+    "name": "fooPkg",
+    "version": "1.0.0",
+    "humanname": "foo",
+    "views": {
+        "fooView": {
+            "root": "/foo",
+            "page": "index.html",
+        }
+    },
+    "requires_daemon": [
+        "TWDNEv3==1.0.0",
+    ]
+}
+
+For now, let's group everything under (package name -> view name)
+
+Do I have a different metaphor than "package" to use? Overloading for UI and daemon is probably confusing
+- Let's go with "interface" -> "view"
+    - interface is the package
+    - view is a directory containing html documents, with 1 interface -> many views
+
+---
+
+So I've got a bunch of packages on daemon that collectively imply a bunch of interfaces should be available on UI
+
+How does the UI get them?
+
+1. The UI downloads them
+
+2. The daemon downloads them and then serves to the UI
+
+1 is nice but tough to manage.
+2 breaks encapsulation -- the server should be able to operate without realizing that a UI even exists
+
+Say we go 1.
+    - How does the UI figure out what to download?
+    - What does it do if the download fails?
+    - How does it react to changes in the daemon's packages?
+    - How does someone test locally?
+
+If it fails: throw an error, eventually alert the user
+How does it react to change in wanted interfaces: change the interfaces
+How does someone test locally: manually stick the package in the proper directory and/or I can build an interface for it
+
+How does it figure out what to download?
+    - In the interfaces menu, stick two buttons: synchronize, manage
+    - Synchronize just does it as automatically as I can manage: fetch all interfaces for given packages
+        - In most cases 'all' will mean 0 or 1
+    - Manage opens a dialog where we can see package -> interface relationship -- maybe a 2 column table?
+    - Once it's displayed like that, it's viable to just hit the button and it installs or removes
+
+How does synchronize know?
+    - Somewhere on the web there's a package -> interface mapping: the index
+    - Specify the index url via config
+    - Try to download and cache it each time you synchronize
+
+So a lot of this is starting to depend on web infrastructure -- these files are available at that website, etc
+Seems to be a complete picture, without that, but I was hoping on sticking things in AWS _after_ all this was all done
+and ready to demo
+
+Strategy:
+    - Ignore the "manage" bit for now, which includes removing interfaces
+    - Stub out / mock network calls
+        - Eventually: GET index --> GET interface
+        - For now: index at file --> interface at file
+
+The form of the interface in the index (package -> interface):
+    - I can have (name) or (url, hash)
+        package -> name -> (url, hash) -> zipfile:
+            - name implies another index: name -> (url, hash) -> zipfile
+            - Maybe this exists in the package repo?
+            - kinda long of a chain
+        package -> (url, hash) -> zipfile:
+            - somewhat harder to update, maybe?
+            - I need a name -> (url, hash) anyway -- `hivemind-ui install foo kinda thing`
+                - Not that there's a cli, but that will drive the 'manage' part of things

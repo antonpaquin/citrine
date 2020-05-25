@@ -1,12 +1,11 @@
 import subprocess
-import threading
 
 from PySide2 import QtWidgets, QtGui, QtCore
 import hivemind_client
 
-import hivemind_ui.app as app
-from hivemind_ui.qt_util import NavButton, HBox, qt_xml, threaded
-import hivemind_ui.config as config
+from hivemind_ui import app, config
+from hivemind_ui.qt_util import NavButton, HBox, register_xml
+from hivemind_ui.util import threaded
 
 
 class DaemonConnection(QtCore.QObject):
@@ -57,11 +56,11 @@ class DaemonConnection(QtCore.QObject):
         subprocess.Popen(['hivemind-daemon'])
 
 
-@qt_xml.register('ServerStatus')
+@register_xml('ServerStatus')
 class ServerStatus(QtWidgets.QLabel): pass
 
 
-@qt_xml.register('ConnectionPage')
+@register_xml('ConnectionPage')
 class ConnectionPage(HBox):
     host_box: QtWidgets.QLineEdit
     port_box: QtWidgets.QLineEdit
@@ -96,7 +95,7 @@ class ConnectionPage(HBox):
         self.model.spawn_daemon()
 
 
-@qt_xml.register('ConnectionNavButton')
+@register_xml('ConnectionNavButton')
 class ConnectionNavButton(NavButton):
     text = 'connection'
     panel_class = ConnectionPage

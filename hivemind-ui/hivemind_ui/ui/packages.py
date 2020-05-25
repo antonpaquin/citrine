@@ -1,16 +1,16 @@
 import json
 import os
-import threading
 from typing import *
 
-from PySide2 import QtWidgets, QtCore, QtGui
+from PySide2 import QtWidgets, QtCore
 from PySide2.QtCore import Qt
 
 import hivemind_client
 
 from hivemind_ui import app
 from hivemind_ui.config import get_config
-from hivemind_ui.qt_util import HBox, VBox, NavButton, qt_xml, threaded
+from hivemind_ui.qt_util import HBox, VBox, NavButton, register_xml
+from hivemind_ui.util import threaded
 
 
 class DaemonPackage(QtCore.QObject):
@@ -108,6 +108,7 @@ class PackagesModel(QtCore.QObject):
     def install_package(self, fname: str) -> PackageInProgress:
         in_progress = PackageInProgress(os.path.basename(fname))
 
+        @threaded
         def install_package_thread():
             self.in_progress_packages.append(in_progress)
             self.sig_changed_packages.emit()
@@ -119,17 +120,16 @@ class PackagesModel(QtCore.QObject):
             self.in_progress_packages.remove(in_progress)
             self.query_packages()
 
-        t = threading.Thread(target=install_package_thread)
-        t.start()
+        install_package_thread()
 
         return in_progress
 
 
-@qt_xml.register('PackagePageHeader')
+@register_xml('PackagePageHeader')
 class PackagePageHeader(HBox): pass
 
 
-@qt_xml.register('PackageProgress')
+@register_xml('PackageProgress')
 class PackageProgress(HBox):
     name_label: QtWidgets.QLabel
     progress_bar: QtWidgets.QProgressBar
@@ -146,7 +146,7 @@ class PackageProgress(HBox):
         self.progress_bar.setMaximum(self.model.maximum)
 
 
-@qt_xml.register('PackageEntry')
+@register_xml('PackageEntry')
 class PackageEntry(HBox):
     human_name: QtWidgets.QLabel
     name: QtWidgets.QLabel
@@ -178,7 +178,7 @@ class PackageEntry(HBox):
         self.model.remove()
 
 
-@qt_xml.register('PackagePage')
+@register_xml('PackagePage')
 class PackagePage(VBox):
     li: QtWidgets.QListWidget
     label_filename: QtWidgets.QLabel
@@ -229,7 +229,7 @@ class PackagePage(VBox):
             self.li.setItemWidget(list_item, widget)
 
 
-@qt_xml.register('PackageNavButton')
+@register_xml('PackageNavButton')
 class PackageNavButton(NavButton):
     text = 'packages'
     panel_class = PackagePage

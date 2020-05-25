@@ -5,6 +5,7 @@ from typing import Any, Dict
 default_config = {
     'daemon.server': '127.0.0.1',
     'daemon.port': 5402,
+    'js_bridge.socket.port': 5403,
     'storage.rootpath': os.path.join(os.getenv('HOME'), '.cache', 'hivemind', 'ui')
 }
 
@@ -12,6 +13,7 @@ default_config = {
 config_types = {
     'daemon.server': str,
     'daemon.port': int,
+    'js_bridge.socket.port': int,
     'storage.rootpath': str,
 }
 

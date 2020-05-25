@@ -2,10 +2,10 @@ from typing import ClassVar
 
 from PySide2 import QtWidgets
 
-from hivemind_ui.qt_util import HBox, VBox, qt_xml
+from hivemind_ui.qt_util import HBox, VBox, register_xml
 
 
-@qt_xml.register('MainWrapper')
+@register_xml('MainWrapper')
 class MainWrapper(HBox):
     active_panel: QtWidgets.QFrame
     
@@ -22,7 +22,7 @@ class MainWrapper(HBox):
         self.active_panel = new_panel
 
 
-@qt_xml.register('NavPanel')
+@register_xml('NavPanel')
 class NavPanel(VBox):
     def __init__(self):
         super().__init__()

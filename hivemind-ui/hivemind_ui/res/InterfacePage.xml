@@ -1,4 +1,10 @@
 <InterfacePage>
-    <QTreeWidget name="selector"/>
+    <VBox stretch="0">
+        <QTreeWidget name="selector" stretch="1" setColumnCount="1" setExpandsOnDoubleClick="False"/>
+        <HBox>
+            <QPushButton name="sync_btn" text="synchronize"/>
+            <QPushButton name="manage_btn" text="manage"/>
+        </HBox>
+    </VBox>
     <QWebEngineView name="display" stretch="1"/>
 </InterfacePage>

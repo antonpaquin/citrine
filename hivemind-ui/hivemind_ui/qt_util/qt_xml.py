@@ -5,7 +5,6 @@ from PySide2 import QtWidgets, QtWebEngineWidgets
 from PySide2.QtCore import QObject, Qt
 
 import hivemind_ui.util
-import hivemind_ui.qt_util.base
 
 
 # I was frustrated with the QT markup loaders so I wrote my own
@@ -25,7 +24,7 @@ widgets.update({
 qt_vals = Qt.__dict__
 
 
-def register(name: str):
+def register_xml(name: str):
     def wrapper(cls):
         widgets[name] = cls
         return cls

@@ -1,25 +1,10 @@
 import typing
 
-from PySide2 import QtGui, QtWidgets, QtCore
+from PySide2 import QtWidgets, QtCore
 from PySide2.QtCore import Qt
 
-import hivemind_client
-
-from hivemind_ui.qt_util import qt_xml, HBox, VBox, NavButton
+from hivemind_ui.qt_util import VBox, NavButton, register_xml
 import hivemind_ui.config as config
-
-
-def recur(x, indent=''):
-    print(indent, x)
-    indent = indent + '\t'
-    if isinstance(x, QtWidgets.QLayout):
-        for y in range(x.count()):
-            recur(x.itemAt(y).widget(), indent)
-    elif isinstance(x, QtCore.QItemSelectionModel):
-        pass
-    else:
-        for y in x.children():
-            recur(y, indent + '\t')
 
 
 class ConfigTableRow:
@@ -39,10 +24,11 @@ class ConfigTableRow:
             li.setItem(row, col, item)
             
     def edit_val(self, ev: QtCore.QEvent):
+        # TODO: what is this for?
         print('Anton: edit val!')
 
 
-@qt_xml.register('ConfigPage')
+@register_xml('ConfigPage')
 class ConfigPage(VBox):
     search_bar: QtWidgets.QLineEdit
     li: QtWidgets.QTableWidget
@@ -68,8 +54,8 @@ class ConfigPage(VBox):
 
         self.show()
         
-    def data_changed(self, topLeft: QtCore.QModelIndex, bottomRight: QtCore.QModelIndex, roles: typing.Any):
-        row = topLeft.row()
+    def data_changed(self, top_left: QtCore.QModelIndex, bottom_right: QtCore.QModelIndex, roles: typing.Any):
+        row = top_left.row()
         key = self.li.item(row, 0).text()
         val = self.li.item(row, 2).text()
         config.set_config(key, val)
@@ -85,7 +71,7 @@ class ConfigPage(VBox):
                 row.appendTo(self.li)
 
 
-@qt_xml.register('ConfigNavButton')
+@register_xml('ConfigNavButton')
 class ConfigNavButton(NavButton):
     text = 'configure'
     panel_class = ConfigPage

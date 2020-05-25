@@ -16,3 +16,4 @@ hivemind-daemon/onnx
 .gitconfig
 activate
 mock-repo/
+.pki/
