@@ -1,7 +1,7 @@
 <NavPanel setAutoFillBackground="True" setAlignment="@AlignTop">
-    <StartupNavButton/>
-    <ConnectionNavButton/>
-    <ConfigNavButton/>
-    <PackageNavButton/>
-    <InterfaceNavButton/>
+    <StartupNavButton name="startup_button"/>
+    <ConnectionNavButton name="connection_button"/>
+    <ConfigNavButton name="config_button"/>
+    <PackageNavButton name="package_button"/>
+    <InterfaceNavButton name="interface_button"/>
 </NavPanel>

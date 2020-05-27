@@ -1,14 +1,15 @@
 import subprocess
 
+from PySide2.QtCore import Qt
 from PySide2 import QtWidgets, QtGui, QtCore
 import hivemind_client
 
 from hivemind_ui import app, config
-from hivemind_ui.qt_util import NavButton, HBox, register_xml
+from hivemind_ui.qt_util import NavButton, HBox, register_xml, SafeQObject
 from hivemind_ui.util import threaded
 
 
-class DaemonConnection(QtCore.QObject):
+class DaemonConnection(SafeQObject):
     NO_CONNECTION = 0
     TRY_CONNECT = 1
     CONNECTED = 2
@@ -45,11 +46,13 @@ class DaemonConnection(QtCore.QObject):
             self.port = port
             self.state = DaemonConnection.CONNECTED
             self.sig_connect_done.emit()
-        except hivemind_client.errors.ConnectionRefused:
+        except hivemind_client.errors.ConnectionRefused as e:
             self.state = DaemonConnection.NO_CONNECTION
+            app.display_error(e)
             self.sig_connect_error.emit(f'Connection refused')
         except hivemind_client.errors.HivemindClientError as e:
             self.state = DaemonConnection.NO_CONNECTION
+            app.display_error(e)
             self.sig_connect_error.emit(f'Failed: {e.name}')
 
     def spawn_daemon(self):
@@ -73,13 +76,12 @@ class ConnectionPage(HBox):
         self.load_xml('ConnectionPage.xml')
 
         self.model = DaemonConnection.get_instance()
-        self.model.sig_connect_done.connect(self.connection_finished)
-        self.model.sig_connect_error.connect(self.connection_error)
+        self.model.sig_connect_done.connect(self.connection_finished, type=Qt.QueuedConnection)
+        self.model.sig_connect_error.connect(self.connection_error, type=Qt.QueuedConnection)
 
         self.port_box.setValidator(QtGui.QIntValidator())
         self.spawn_daemon_btn.mousePressEvent = self.spawn_btn_press
         self.connect_btn.mousePressEvent = self.connect_btn_press
-        self.show()
 
     def connect_btn_press(self: 'ConnectionPage', _: QtGui.QMouseEvent):
         self.model.daemon_connect(self.host_box.text(), int(self.port_box.text()))

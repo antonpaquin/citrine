@@ -38,6 +38,7 @@ class HivemindJSClient(QWebEngineScript):
 class HivemindBridgeClient:
     def __init__(self):
         self.client = hivemind_client.HivemindClient(get_config('daemon.server'), get_config('daemon.port'))
+        self.client.heartbeat()
         self.send = None
         # Set up a queue to hold any messages sent in the interval between when on_recv is received by the async server
         # and the resulting "send" is bound here
@@ -71,15 +72,18 @@ class HivemindBridgeClient:
         def cmd_thread():
             try:
                 results = cmd(**jsn['params'])
+                reply = json.dumps({
+                    'id': jsn['id'],
+                    'results': results,
+                    'success': True,
+                })
             except hivemind_client.errors.HivemindClientError as e:
-                # TODO: proper error logging / return to client?
-                print(e.data)
-                raise
-            
-            reply = json.dumps({
-                'id': jsn['id'],
-                'results': results
-            })
+                reply = json.dumps({
+                    'id': jsn['id'],
+                    'error': e.to_dict(),
+                    'success': False,
+                })
+
             if self.send is None:
                 self.prebind_send_queue.put(reply)
             else:

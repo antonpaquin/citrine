@@ -1,9 +1,9 @@
-from typing import ClassVar, List, Optional
+from typing import *
 
 from PySide2 import QtWidgets, QtGui, QtCore
 from PySide2.QtCore import Qt
 
-import hivemind_ui.app as app
+from hivemind_ui import app
 from hivemind_ui.qt_util.chain_wrapper import ChainingWrapper
 import hivemind_ui.qt_util.qt_xml as qt_xml
 
@@ -28,15 +28,23 @@ class MetaBox(qt_xml.XmlComponent):
         return ChainingWrapper(widget)
         
     def removeWidget(self, widget: QtWidgets.QWidget):
+        if widget not in self._items:
+            print('Bad remove!')
+            return
         idx = self._layout.indexOf(widget)
         self._layout.removeWidget(widget)
         self._items.pop(idx)
         
     def replaceWidget(self, widget_from: QtWidgets.QWidget, widget_to: QtWidgets.QWidget):
+        if widget_from not in self._items:
+            print('Bad replace!')
+            return
+        print('Start replace', flush=True)
         idx = self._layout.indexOf(widget_from)
         self._layout.replaceWidget(widget_from, widget_to)
         self._items[idx] = widget_to
-        
+        print('End replace', flush=True)
+
     def __len__(self):
         return len(self._items)
 
@@ -58,6 +66,17 @@ class VBox(MetaBox):
         super().__init__(QtWidgets.QVBoxLayout)
 
 
+@qt_xml.register_xml('XDialog')
+class XDialog(MetaBox, QtWidgets.QDialog):
+    accepted: QtCore.SignalInstance
+    finished: QtCore.SignalInstance
+    rejected: QtCore.SignalInstance
+    
+    def __init__(self):
+        MetaBox.__init__(self, layout_type=QtWidgets.QVBoxLayout)
+        QtWidgets.QDialog.__init__(self)
+        
+        
 class NavButton(VBox):
     text: str
     panel_class: ClassVar
@@ -70,11 +89,8 @@ class NavButton(VBox):
         self.addWidget(QtWidgets.QLabel(self.text), 0).setAlignment(Qt.AlignCenter)
 
         self._panel_class = self.panel_class
-
         self.show()
 
     def mousePressEvent(self, event: QtGui.QMouseEvent):
         window = app.get_root()
         window.set_panel(self._panel_class)
-
-

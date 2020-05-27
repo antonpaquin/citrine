@@ -1,11 +1,31 @@
 import os
+import queue
 import threading
+
+from PySide2 import QtCore
+
+threadpool = []
+work_queue = queue.Queue()
+
+
+def init_threadpool():
+    global threadpool
+    threadpool = [threading.Thread(target=worker_thread, daemon=True, name=f'Worker-{idx}') for idx in range(1)]
+    [t.start() for t in threadpool]
+
+
+def worker_thread():
+    while True:
+        try:
+            fn, args = work_queue.get()
+            fn(*args)
+        except Exception as e:
+            print(f'Error in thread: {e}')
 
 
 def threaded(f):
     def wrapped(*args):
-        t = threading.Thread(target=f, daemon=True, args=args)
-        t.start()
+        work_queue.put((f, args))
     return wrapped
 
 

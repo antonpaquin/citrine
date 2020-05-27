@@ -1,0 +1,3 @@
+<ErrorBox padding="50" margin="50">
+    <QLabel name="message_label" setAlignment="@AlignLeft"/>
+</ErrorBox>

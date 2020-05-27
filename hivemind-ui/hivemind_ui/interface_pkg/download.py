@@ -4,8 +4,7 @@ import requests
 import threading
 from typing import *
 
-
-import hivemind_ui.config as config
+from hivemind_ui import config, errors
 
 
 # TODO fix ui download
@@ -31,7 +30,7 @@ def get_file(link: str, hash_expected: str) -> str:
 
     part_fpath = fpath + '.part'
     if part_fpath in download_lock and download_lock[part_fpath].locked():
-        raise RuntimeError(f'Could not acquire lock for file {part_fpath}')
+        raise errors.DownloadError(f'Could not acquire lock for file {part_fpath}')
     if part_fpath not in download_lock:
         download_lock[part_fpath] = threading.Lock()
 
@@ -49,7 +48,7 @@ def get_file(link: str, hash_expected: str) -> str:
             try:
                 r.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                raise RuntimeError(f'Failed to download file: {str(e)}')
+                raise errors.DownloadError(f'Failed to download file: {str(e)}')
             if 'Content-Length' in r.headers:
                 job_put_extra('download-size', int(r.headers['Content-Length']))
 
@@ -71,7 +70,7 @@ def get_file(link: str, hash_expected: str) -> str:
         hash_actual = shasum.hexdigest()
         if hash_actual != hash_expected:
             os.remove(part_fpath)
-            raise RuntimeError(f'File hash {hash_actual} did not match expected value {hash_expected}')
+            raise errors.DownloadError(f'File hash {hash_actual} did not match expected value {hash_expected}')
 
         os.rename(part_fpath, fpath)
         return fpath
@@ -80,8 +79,8 @@ def get_file(link: str, hash_expected: str) -> str:
 def test_range(link):
     r = requests.head(link)
     if r.status_code != 200:
-        raise RuntimeError(f'Request for URL {link} failed with error code {r.status_code}')
-    if not 'Accept-Ranges' in r.headers and 'Content-Length' in r.headers:
+        raise errors.DownloadError(f'Request for URL {link} failed with error code {r.status_code}')
+    if 'Accept-Ranges' not in r.headers and 'Content-Length' in r.headers:
         return False, 0
     if r.headers['Accept-Ranges'] == 'none':
         return False, 0

@@ -6,7 +6,6 @@ class StartupPage(VBox):
     def __init__(self):
         super(StartupPage, self).__init__()
         self.load_xml('StartupPage.xml')
-        self.show()
 
 
 @register_xml('StartupNavButton')

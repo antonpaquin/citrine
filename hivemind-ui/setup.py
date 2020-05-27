@@ -7,6 +7,8 @@ setup(
     description='Friendly user interface for hivemind-daemon',
     packages=find_packages(),
     install_requires=[
+        'pyside2',
+        'websockets'
     ],
     entry_points={
         'console_scripts': [

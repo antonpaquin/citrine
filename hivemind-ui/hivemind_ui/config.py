@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict
 
+from hivemind_ui import errors
 
 default_config = {
     'daemon.server': '127.0.0.1',
@@ -45,7 +46,7 @@ class Config:
     @staticmethod
     def set(k: str, v: Any):
         if k not in config_types:
-            raise KeyError(f'Unknown config value {k}')
+            raise errors.ConfigError(f'Unknown config value {k}')
         t = config_types[k]
         Config._items[k] = t(v)
 

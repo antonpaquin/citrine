@@ -1,0 +1,8 @@
+<InterfaceManagePopup>
+    <QTableWidget name="table" stretch="1" setColumnCount="3"/>
+    <HBox>
+        <QPushButton name="apply_btn" text="apply"/>
+        <QPushButton name="okay_btn" text="okay"/>
+        <QPushButton name="cancel_btn" text="cancel"/>
+    </HBox>
+</InterfaceManagePopup>

@@ -49,11 +49,9 @@ class ConfigPage(VBox):
 
         self.populate('')
         
-        self.search_bar.textChanged.connect(self.edit_search)
+        self.search_bar.textChanged.connect(self.edit_search, type=Qt.QueuedConnection)
         self.li.dataChanged = self.data_changed
 
-        self.show()
-        
     def data_changed(self, top_left: QtCore.QModelIndex, bottom_right: QtCore.QModelIndex, roles: typing.Any):
         row = top_left.row()
         key = self.li.item(row, 0).text()

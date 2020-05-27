@@ -1,4 +1,4 @@
 <MainWrapper>
-    <NavPanel/>
+    <NavPanel name="nav_panel"/>
     <QFrame name="active_panel" stretch="1"/>
 </MainWrapper>

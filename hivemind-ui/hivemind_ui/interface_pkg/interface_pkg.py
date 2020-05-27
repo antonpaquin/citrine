@@ -8,14 +8,17 @@ import zipfile
 import cerberus
 import hivemind_client
 
-import hivemind_ui.config as config
+from hivemind_ui import config, errors
 import hivemind_ui.interface_pkg.download as download
 
 
 __all__ = [
     'init_interfaces',
     'synchronize',
+    'install_interface',
+    'remove_interface',
     'list_interfaces',
+    'list_available_interfaces',
     'Interface',
     'InterfaceView',
 ]
@@ -79,7 +82,7 @@ class Interface(object):
     @staticmethod
     def load(fpath: str) -> 'Interface':
         metadata_fname = os.path.join(fpath, 'meta.json')
-        meta = parse_metadata_file(metadata_fname)
+        meta = _parse_metadata_file(metadata_fname)
         views = []
         for name, view_meta in meta['views'].items():
             rel_path = view_meta['root'].split('/')
@@ -121,13 +124,22 @@ def init_interfaces():
         
         
 def synchronize():
-    for interface in check_wanted_interfaces():
-        url, hashsum = locate_interface(interface)
-        if url.startswith('/'):
-            fname = url
-        else:
-            fname = download.get_file(url, hashsum)
-        install_from_zip(fname)
+    for interface_name in _check_wanted_interfaces():
+        install_interface(interface_name)
+
+
+def install_interface(interface_name: str):
+    url, hashsum = _locate_interface(interface_name)
+    if url.startswith('/'):
+        fname = url
+    else:
+        fname = download.get_file(url, hashsum)
+    _install_from_zip(fname)
+
+
+def remove_interface(interface_name: str):
+    interface_fpath = os.path.join(config.get_config('storage.rootpath'), 'interfaces', interface_name)
+    shutil.rmtree(interface_fpath)
 
 
 def list_interfaces() -> List[Interface]:
@@ -139,26 +151,46 @@ def list_interfaces() -> List[Interface]:
     return res
 
 
-def install_from_zip(zip_fname: str):
+def list_available_interfaces() -> List[Tuple[str, str]]:
+    client = hivemind_client.HivemindClient(config.get_config('daemon.server'), config.get_config('daemon.port'))
+    list_packages = [p['name'] for p in client.package.list()['packages']]
+    pi_index = get_package_interface_index()
+    res = []
+    for package in list_packages:
+        if package not in pi_index:
+            continue
+        for interface in pi_index[package]:
+            res.append((package, interface))
+    return res
+
+
+def _check_wanted_interfaces() -> List[str]:
+    client = hivemind_client.HivemindClient(config.get_config('daemon.server'), config.get_config('daemon.port'))
+    list_packages = [p['name'] for p in client.package.list()['packages']]
+    pi_index = get_package_interface_index()
+    wanted_interfaces = []
+    for package in list_packages:
+        if package in pi_index:
+            wanted_interfaces.extend(pi_index[package])
+    return wanted_interfaces
+
+
+def _locate_interface(name: str) -> Tuple[str, str]:
+    index = get_interface_index()
+    return index[name]
+
+
+def _install_from_zip(zip_fname: str):
     with tempfile.TemporaryDirectory() as tmpdir:
         with zipfile.ZipFile(zip_fname) as zip_f:
             for fname in zip_f.filelist:
                 zip_f.extract(fname, tmpdir)
-        install_from_temp(tmpdir)
-        
-
-def parse_metadata_file(fname: str):
-    with open(fname, 'r') as in_f:
-        meta = json.load(in_f)
-    validator = cerberus.Validator(schema=metadata_validator)
-    if not validator.validate(meta):
-        raise RuntimeError(json.dumps(validator.errors))
-    return validator.document
+        _install_from_temp(tmpdir)
 
 
-def install_from_temp(tmpdir: str):
+def _install_from_temp(tmpdir: str):
     metadata_fname = os.path.join(tmpdir, 'meta.json')
-    meta = parse_metadata_file(metadata_fname)
+    meta = _parse_metadata_file(metadata_fname)
     interface_name = meta['name']
     interface_fpath = os.path.join(config.get_config('storage.rootpath'), 'interfaces', interface_name)
     if os.path.exists(interface_fpath):
@@ -175,32 +207,16 @@ def install_from_temp(tmpdir: str):
             shutil.copy(fpath, fdest)
 
 
-def check_wanted_interfaces() -> List[str]:
-    client = hivemind_client.HivemindClient(config.get_config('daemon.server'), config.get_config('daemon.port'))
-    list_packages = [p['name'] for p in client.package.list()['packages']]
-    pi_index = get_package_interface_index()
-    wanted_interfaces = []
-    for package in list_packages:
-        if package in pi_index:
-            wanted_interfaces.append(pi_index[package])
-    return wanted_interfaces
+def _parse_metadata_file(fname: str):
+    with open(fname, 'r') as in_f:
+        meta = json.load(in_f)
+    validator = cerberus.Validator(schema=metadata_validator)
+    if not validator.validate(meta):
+        raise errors.InterfaceError(json.dumps(validator.errors))
+    return validator.document
 
 
-def locate_interface(name: str) -> Tuple[str, str]:
-    index = get_interface_index()
-    return index[name]
-
-
-def get_interface(url: str, file_hash: str):
-    dl_file = download.get_file(url, file_hash)
-    
-    with tempfile.TemporaryDirectory() as tmpdir, zipfile.ZipFile(dl_file) as zip_f:
-        for fname in zip_f.filelist:
-            zip_f.extract(fname, tmpdir)
-        install_from_temp(tmpdir)
-        
-
-def get_package_interface_index() -> Dict[str, str]:
+def get_package_interface_index() -> Dict[str, List[str]]:
     # TODO: package_interface_index on web
     # This is a stubbed out version that pulls from the local machine
     # Eventually this wants to 'requests' out to amazon or something
@@ -216,7 +232,9 @@ def get_package_interface_index() -> Dict[str, str]:
         package_interface_index = {}
         for line in raw:
             package, interface = line.strip().split(sep)
-            package_interface_index[package] = interface
+            if package not in package_interface_index:
+                package_interface_index[package] = []
+            package_interface_index[package].append(interface)
 
     return package_interface_index
 

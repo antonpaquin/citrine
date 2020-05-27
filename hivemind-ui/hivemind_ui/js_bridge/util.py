@@ -3,6 +3,8 @@ import queue
 import threading
 from typing import *
 
+from hivemind_ui import errors
+
 
 class AsyncTunnel:
     # We need to cross thread _and_ asyncio boundaries
@@ -20,7 +22,7 @@ class AsyncTunnel:
 
     def send(self, key, value, timeout=1000):
         if key in self.a_to_b:
-            raise KeyError("Key already in use")
+            raise errors.TransportKeyError("Key already in use: threaded double claim")
         with self._lock:
             self.a_to_b[key] = value
             if key in self.notify:
@@ -34,7 +36,7 @@ class AsyncTunnel:
 
     async def send_async(self, key, value):
         if key in self.b_to_a:
-            raise KeyError("Key already in use")
+            raise errors.TransportKeyError("Key already in use: async double connect")
         with self._lock:  # yes, locking the event loop. I promise it won't be for long.
             if key not in self.b_to_a:
                 self.b_to_a[key] = queue.Queue()
