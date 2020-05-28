@@ -2,8 +2,6 @@ import os
 import queue
 import threading
 
-from PySide2 import QtCore
-
 threadpool = []
 work_queue = queue.Queue()
 

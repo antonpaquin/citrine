@@ -14,7 +14,7 @@ from hivemind_daemon.server.json import HivemindEncoder
 class FileHandle(object):
     def __init__(self):
         self.fname = str(uuid4()).replace('-', '')
-        self.fpath = os.path.join(storage.results_path, self.fname)
+        self.fpath = os.path.join(storage.results_path(), self.fname)
 
     @staticmethod
     def from_pil_image(img: Image):

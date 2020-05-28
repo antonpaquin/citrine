@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='hivemind-client',
-    version='0.0.1',
+    version='0.1.0',
     description='Utility for interacting with hivemind-daemon',
     packages=find_packages(),
     install_requires=[

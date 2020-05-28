@@ -1,6 +1,5 @@
 import os
 from typing import *
-import threading
 
 from PySide2 import QtWidgets, QtCore
 from PySide2.QtCore import Qt
@@ -9,11 +8,11 @@ import hivemind_client
 
 from hivemind_ui import app, errors
 from hivemind_ui.config import get_config
-from hivemind_ui.qt_util import HBox, VBox, NavButton, register_xml, SafeQObject
+from hivemind_ui.qt_util import HBox, VBox, NavButton, register_xml
 from hivemind_ui.util import threaded
 
 
-class DaemonPackage(SafeQObject):
+class DaemonPackage(QtCore.QObject):
 
     sig_updated: QtCore.SignalInstance = QtCore.Signal()
     sig_removed: QtCore.SignalInstance = QtCore.Signal()
@@ -53,9 +52,9 @@ class DaemonPackage(SafeQObject):
             pass
             self.on_remove()
         self.sig_removed.emit()
-        
-        
-class PackageInProgress(SafeQObject):
+
+
+class PackageInProgress(QtCore.QObject):
 
     sig_update_progress: QtCore.SignalInstance = QtCore.Signal()
 
@@ -73,7 +72,7 @@ class PackageInProgress(SafeQObject):
         self.sig_update_progress.emit()
 
 
-class PackagesModel(SafeQObject):
+class PackagesModel(QtCore.QObject):
     _instance = None
 
     sig_changed_packages: QtCore.SignalInstance = QtCore.Signal()
@@ -86,7 +85,7 @@ class PackagesModel(SafeQObject):
     @staticmethod
     def get_instance() -> 'PackagesModel':
         if PackagesModel._instance is None:
-            PackagesModel._instance = PackagesModel.init_safe()
+            PackagesModel._instance = PackagesModel()
         return PackagesModel._instance
 
     @threaded
@@ -100,7 +99,7 @@ class PackagesModel(SafeQObject):
 
         li = []
         for package in package_list['packages']:
-            model = DaemonPackage.init_safe(
+            model = DaemonPackage(
                 name=package['name'],
                 human_name=package['human_name'],
                 version=package['version'],
@@ -114,7 +113,7 @@ class PackagesModel(SafeQObject):
         self.sig_changed_packages.emit()
 
     def install_package(self, fname: str) -> PackageInProgress:
-        in_progress = PackageInProgress.init_safe(os.path.basename(fname))
+        in_progress = PackageInProgress(os.path.basename(fname))
 
         @threaded
         def install_package_thread():
@@ -197,11 +196,12 @@ class PackagePage(VBox):
         self.load_xml('PackagePage.xml')
 
         self.model = PackagesModel.get_instance()
-        self.populate()
 
         self.dialog_btn.mousePressEvent = self.pick_file
 
         self.model.sig_changed_packages.connect(self.populate, type=Qt.QueuedConnection)
+        self.items = []
+        self.populate()
         self.model.query_packages()
 
     def pick_file(self, event: QtCore.QEvent):
@@ -211,31 +211,23 @@ class PackagePage(VBox):
         self.model.install_package(fname)
 
     def populate(self):
-        items = []
+        self.items = []
         for in_progress_model in self.model.in_progress_packages:
             list_item = QtWidgets.QListWidgetItem()
             list_item.setFlags(Qt.ItemIsSelectable)
             in_progress_entry = PackageProgress(in_progress_model)
-            items.append((list_item, in_progress_entry))
+            self.items.append((list_item, in_progress_entry))
 
         for package_model in self.model.packages:
             package_entry = PackageEntry(package_model)
             list_item = QtWidgets.QListWidgetItem()
             list_item.setFlags(Qt.ItemIsSelectable)
-            items.append((list_item, package_entry))
+            self.items.append((list_item, package_entry))
 
         self.li.clear()
-        for list_item, widget in items:
+        for list_item, widget in self.items:
             self.li.addItem(list_item)
             self.li.setItemWidget(list_item, widget)
-            
-    #def destroy(self, destroy_window: bool = False, destroy_sub_windows: bool = False):
-    #    super().destroy(destroy_window, destroy_sub_windows)
-    #    self.pick_file = None
-    #    self.model.sig_changed_packages.disconnect(self.populate)
-
-    #def __del__(self):
-    #    print('del')
 
 
 @register_xml('PackageNavButton')

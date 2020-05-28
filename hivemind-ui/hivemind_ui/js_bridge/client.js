@@ -31,11 +31,16 @@ class HivemindClient {
     _onmessage(event) {
         let msg = event.data;
         let jsn = JSON.parse(msg);
-        let resp = jsn.results;
-        let id = jsn.id;
-        let callback = this._callbacks.get(id);
-        this._callbacks.delete('id');
-        callback(resp);
+        if (jsn.success) {
+            let resp = jsn.results;
+            let id = jsn.id;
+            let callback = this._callbacks.get(id);
+            this._callbacks.delete('id');
+            callback(resp);
+        } else {
+            /* TODO handle errors */
+            console.log(resp);
+        }
     }
 
     heartbeat(callback) {

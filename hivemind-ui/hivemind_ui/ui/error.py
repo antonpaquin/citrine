@@ -51,6 +51,9 @@ class ErrorSpawner(QtCore.QObject):
 class ErrorMessage(HBox):
     message_label: QtWidgets.QLabel
 
+    # TODO: expand error message
+    # if the user clicks on the error, open up a dialog that doesn't auto-close with a copy-pastable error message
+
     def __init__(self, message: Union[str, hivemind_client.errors.HivemindClientError, Dict]):
         super().__init__()
         self.load_xml('ErrorBox.xml')

@@ -4,7 +4,6 @@ from PySide2 import QtWidgets, QtGui, QtCore
 from PySide2.QtCore import Qt
 
 from hivemind_ui import app
-from hivemind_ui.qt_util.chain_wrapper import ChainingWrapper
 import hivemind_ui.qt_util.qt_xml as qt_xml
 
 
@@ -20,12 +19,12 @@ class MetaBox(qt_xml.XmlComponent):
         self.setSpacing = self._layout.setSpacing
         self.setAlignment = self._layout.setAlignment
 
-    def addWidget(self, widget: QtWidgets.QWidget, stretch: Optional[int] = None) -> ChainingWrapper:
+    def addWidget(self, widget: QtWidgets.QWidget, stretch: Optional[int] = None) -> QtWidgets.QWidget:
         self._layout.addWidget(widget)
         self._items.append(widget)
         if stretch is not None:
             self._layout.setStretch(len(self) - 1, stretch)
-        return ChainingWrapper(widget)
+        return widget
         
     def removeWidget(self, widget: QtWidgets.QWidget):
         if widget not in self._items:
@@ -39,11 +38,9 @@ class MetaBox(qt_xml.XmlComponent):
         if widget_from not in self._items:
             print('Bad replace!')
             return
-        print('Start replace', flush=True)
         idx = self._layout.indexOf(widget_from)
         self._layout.replaceWidget(widget_from, widget_to)
         self._items[idx] = widget_to
-        print('End replace', flush=True)
 
     def __len__(self):
         return len(self._items)
@@ -86,7 +83,9 @@ class NavButton(VBox):
         self._layout.setAlignment(Qt.AlignBottom)
 
         self.addWidget(QtWidgets.QWidget(), 1)
-        self.addWidget(QtWidgets.QLabel(self.text), 0).setAlignment(Qt.AlignCenter)
+        text = QtWidgets.QLabel(self.text)
+        text.setAlignment(Qt.AlignCenter)
+        self.addWidget(text, 0)
 
         self._panel_class = self.panel_class
         self.show()

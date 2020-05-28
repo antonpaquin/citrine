@@ -1,4 +1,4 @@
 <StartupPage>
-    <QLabel arg0="Hivemind-UI version 0.0.1" setAlignment="@AlignCenter">
+    <QLabel arg0="Hivemind-UI version 1.0.0" setAlignment="@AlignCenter">
     </QLabel>
 </StartupPage>

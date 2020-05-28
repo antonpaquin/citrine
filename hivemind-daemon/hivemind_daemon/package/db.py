@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def _db_path():
     logger.debug('Initializing DB connection')
-    return os.path.join(storage.root_path, 'package.db')
+    return os.path.join(storage.root_path(), 'package.db')
 
 
 def start_connection():

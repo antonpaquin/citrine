@@ -1,11 +1,12 @@
+import os
 from typing import *
 
 from PySide2.QtCore import Qt
-from PySide2 import QtWidgets, QtCore
+from PySide2 import QtWidgets, QtCore, QtGui
 from PySide2 import QtWebEngineWidgets
 
-from hivemind_ui import app, interface_pkg, js_bridge, errors
-from hivemind_ui.qt_util import HBox, VBox, NavButton, XDialog, register_xml
+from hivemind_ui import app, interface_pkg, js_bridge, errors, config
+from hivemind_ui.qt_util import HBox, NavButton, XDialog, register_xml
 from hivemind_ui.util import threaded
 
 
@@ -56,10 +57,10 @@ class InterfaceSelectorModel(QtCore.QObject):
             app.display_error(e)
             return
         self.available_interfaces_updated.emit()
-        
+
     def is_installed(self, interface_name: str) -> bool:
         return interface_name in self.interfaces
-    
+
     @threaded
     def modify_interfaces(self, add_interfaces: List[str], remove_interfaces: List[str]):
         try:
@@ -148,6 +149,14 @@ class InterfaceManagePopup(XDialog):
         self.model.available_interfaces_updated.connect(self.populate, type=Qt.QueuedConnection)
         self.model.update_available()
 
+        self.table.setHorizontalHeaderItem(0, QtWidgets.QTableWidgetItem('Package'))
+        self.table.setHorizontalHeaderItem(1, QtWidgets.QTableWidgetItem('Interface'))
+        self.table.setHorizontalHeaderItem(2, QtWidgets.QTableWidgetItem('Installed'))
+        self.table.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+        self.table.verticalHeader().hide()
+
         self.apply_btn.mousePressEvent = self.apply_btn_push
         self.okay_btn.mousePressEvent = self.okay_btn_push
         self.cancel_btn.mousePressEvent = self.cancel_btn_push
@@ -157,23 +166,29 @@ class InterfaceManagePopup(XDialog):
         for package_name, interface_name in self.model.available_interfaces:
             row = self.table.rowCount()
             self.table.setRowCount(row + 1)
-            
+
             for_pkg_box = QtWidgets.QTableWidgetItem()
             for_pkg_box.setText(package_name)
             for_pkg_box.setFlags(Qt.ItemIsSelectable)
+            for_pkg_box.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 0, for_pkg_box)
 
             interface_box = QtWidgets.QTableWidgetItem()
             interface_box.setText(interface_name)
             interface_box.setFlags(Qt.ItemIsSelectable)
+            interface_box.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 1, interface_box)
-            
-            check_box = QtWidgets.QTableWidgetItem()
+
+            checkbox_wrap = QtWidgets.QWidget()
+            checkbox_wrap.setLayout(QtWidgets.QHBoxLayout())
+            checkbox_wrap.layout().setAlignment(Qt.AlignCenter)
+            checkbox_elem = QtWidgets.QCheckBox(parent=checkbox_wrap)
+            checkbox_wrap.layout().addWidget(checkbox_elem)
             if self.model.is_installed(interface_name):
-                check_box.setCheckState(Qt.Checked)
+                checkbox_elem.setCheckState(Qt.Checked)
             else:
-                check_box.setCheckState(Qt.Unchecked)
-            self.table.setItem(row, 2, check_box)
+                checkbox_elem.setCheckState(Qt.Unchecked)
+            self.table.setCellWidget(row, 2, checkbox_wrap)
 
     def apply_btn_push(self, event: QtCore.QEvent):
         self.accepted.emit()
@@ -187,14 +202,16 @@ class InterfaceManagePopup(XDialog):
     def cancel_btn_push(self, event: QtCore.QEvent):
         self.rejected.emit()
         self.close()
-        
+
     def apply_changes(self):
         n_rows = self.table.rowCount()
         to_add = []
         to_remove = []
         for row_idx in range(n_rows):
             interface_name = self.table.item(row_idx, 1).text()
-            checked = (self.table.item(row_idx, 2).checkState() == Qt.Checked)
+            # Kinda janky, might need to fix properly at some point
+            checkbox = self.table.cellWidget(row_idx, 2).children()[1]
+            checked = (checkbox.checkState() == Qt.Checked)
             if checked and not self.model.is_installed(interface_name):
                 to_add.append(interface_name)
             elif not checked and self.model.is_installed(interface_name):
@@ -212,6 +229,7 @@ class InterfacePage(HBox):
 
     def __init__(self):
         super().__init__()
+        os.putenv('QTWEBENGINE_REMOTE_DEBUGGING', str(config.get_config('interface.inspector_port')))
         self.load_xml('InterfacePage.xml')
 
         self.interface_model = InterfaceSelectorModel.get_instance()
@@ -223,10 +241,16 @@ class InterfacePage(HBox):
 
         self.page = InterfaceWebPage(self.display)
         self.display.setPage(self.page)
+        self.page.setBackgroundColor(QtGui.QColor('#222'))
+        self.display.setZoomFactor(config.get_config('interface.scale_factor'))
 
         self.sync_btn.mousePressEvent = self.sync_btn_press
         self.manage_btn.mousePressEvent = self.manage_btn_press
-        
+
+        self.inspector = None
+        inspector_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(Qt.Key_F12), self)
+        inspector_shortcut.activated.connect(self.pop_inspector)
+
         self.dialog = InterfaceManagePopup()
 
     def populate(self):
@@ -241,9 +265,15 @@ class InterfacePage(HBox):
                 tl.addChild(vitem)
         self.selector.expandAll()
 
+    def pop_inspector(self):
+        self.inspector = QtWebEngineWidgets.QWebEngineView()
+        inspect_port = config.get_config("interface.inspector_port")
+        self.inspector.page().setUrl(QtCore.QUrl(f'http://localhost:{inspect_port}'))
+        self.inspector.page().setZoomFactor(config.get_config('interface.scale_factor'))
+        self.inspector.show()
+
     def sync_btn_press(self, event: QtCore.QEvent):
-        #self.interface_model.synchronize()
-        app.display_error('multiline\nerror message\nvery\nmany\nlines!')
+        self.interface_model.synchronize()
 
     def manage_btn_press(self, event: QtCore.QEvent):
         self.dialog.show()

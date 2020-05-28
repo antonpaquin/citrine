@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 def get_file(link: str, hash_expected: str) -> str:
     log_ctx = {'link': link, 'hash_expected': hash_expected}
     logger.info(f'Will attempt to download file from {link}, expecting {hash_expected}', log_ctx)
-    fpath = os.path.join(download_path, hash_expected)
+    fpath = os.path.join(download_path(), hash_expected)
     if os.path.isfile(fpath):
         logger.debug('File is already downloaded')
         return fpath

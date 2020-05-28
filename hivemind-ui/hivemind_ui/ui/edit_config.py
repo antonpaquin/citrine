@@ -4,7 +4,7 @@ from PySide2 import QtWidgets, QtCore
 from PySide2.QtCore import Qt
 
 from hivemind_ui.qt_util import VBox, NavButton, register_xml
-import hivemind_ui.config as config
+from hivemind_ui import app, config, errors
 
 
 class ConfigTableRow:
@@ -56,7 +56,11 @@ class ConfigPage(VBox):
         row = top_left.row()
         key = self.li.item(row, 0).text()
         val = self.li.item(row, 2).text()
-        config.set_config(key, val)
+        try:
+            config.set_config(key, val)
+        except errors.HivemindError as e:
+            self.li.item(row, 2).setText(str(config.get_config(key)))
+            app.display_error(e)
 
     def edit_search(self, ev: QtCore.QEvent):
         self.populate(self.search_bar.text())

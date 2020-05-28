@@ -18,29 +18,30 @@ class MainWrapper(HBox):
         self.load_xml('MainWrapper.xml')
         self.show()
 
-        self.debug_frame_state = 0
-        self.t = QtCore.QTimer()
-        self.t.setInterval(50)
-        self.t.setSingleShot(False)
-        self.t.timeout.connect(self.debug_toggle_frames, type=Qt.QueuedConnection)
-        self.t.start()
+        # Frequently creating and destroying panels seems to lead to segfaults
+        # I think it's a GC / ref counting issue, but I'm not sure how to make sure everything is cleaned up
+        # when QT wants it to be
+        # So just give up and don't frequently create / destroy panels
+        self.panels = {}
         
-    def debug_toggle_frames(self):
-        if self.debug_frame_state == 0:
-            self.debug_frame_state = 1
-            self.nav_panel.startup_button.mousePressEvent(None)
-        else:
-            self.debug_frame_state = 0
-            self.nav_panel.package_button.mousePressEvent(None)
-
     def set_panel(self, panel: ClassVar[QtWidgets.QWidget]):
         if isinstance(self.active_panel, panel):
             return
-        new_panel = panel()
-        self.replaceWidget(self.active_panel, new_panel)
-        #self.active_panel.destroy()
-        self.active_panel = new_panel
         
+        if panel.__name__ in self.panels:
+            new_panel = self.panels[panel.__name__]
+        else:
+            new_panel = panel()
+            self.panels[panel.__name__] = new_panel
+
+        old_panel = self.active_panel
+        self.active_panel = new_panel
+
+        self.replaceWidget(old_panel, new_panel)
+        old_panel.hide()
+        new_panel.show()
+
+
     @staticmethod
     def display_error(message: Union[str, hivemind_client.errors.HivemindClientError, Dict]):
         ErrorSpawner.get_instance().send_error(message)

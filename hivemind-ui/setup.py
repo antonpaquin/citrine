@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='hivemind-ui',
-    version='0.0.1',
+    version='0.1.0',
     description='Friendly user interface for hivemind-daemon',
     packages=find_packages(),
     install_requires=[

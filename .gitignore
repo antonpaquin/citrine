@@ -18,3 +18,4 @@ activate
 mock-repo/
 .pki/
 hivemind.log
+hivemind-ui/test/

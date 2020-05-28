@@ -111,3 +111,31 @@ PackagePage QProgressBar {
     margin-right: 40px;
     color: #aaa;
 }
+
+InterfacePage QTreeWidget {
+    background-color: #222;
+    color: #aaa;
+    padding-top: 20px;
+    border-right: 4px solid #aaa;
+}
+
+InterfaceManagePopup QTableWidget {
+    background-color: #222;
+    text-align: center;
+}
+
+InterfaceManagePopup QHeaderView {
+    background-color: #333;
+    color: #aaa;
+    border-bottom: 2px solid #aaa;
+}
+
+InterfaceManagePopup QTableWidget::item {
+    border-bottom: 2px solid #aaa;
+    border-right: 2px solid #aaa;
+}
+
+ErrorMessage {
+    border: 2px solid #aaa;
+    background-color: #444;
+}

@@ -6,6 +6,8 @@ from hivemind_ui import errors
 default_config = {
     'daemon.server': '127.0.0.1',
     'daemon.port': 5402,
+    'interface.inspector_port': 5404,
+    'interface.scale_factor': 2,
     'js_bridge.socket.port': 5403,
     'storage.rootpath': os.path.join(os.getenv('HOME'), '.cache', 'hivemind', 'ui')
 }
@@ -14,6 +16,8 @@ default_config = {
 config_types = {
     'daemon.server': str,
     'daemon.port': int,
+    'interface.inspector_port': int,
+    'interface.scale_factor': int,
     'js_bridge.socket.port': int,
     'storage.rootpath': str,
 }
@@ -48,7 +52,10 @@ class Config:
         if k not in config_types:
             raise errors.ConfigError(f'Unknown config value {k}')
         t = config_types[k]
-        Config._items[k] = t(v)
+        try:
+            Config._items[k] = t(v)
+        except ValueError as e:
+            raise errors.ConfigError(f'Value {v} is not valid for type {t.__name__}')
 
     @staticmethod
     def get(k: str) -> Any:

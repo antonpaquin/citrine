@@ -38,7 +38,7 @@ def install_from_temp(unpack_dir: str, install_id: str, package_meta: Dict):
     if not os.path.isfile(os.path.join(unpack_dir, 'package.json')):
         raise errors.PackageInstallError(f'No package.json at {unpack_dir}', 400)
 
-    install_dir = os.path.join(package_path, install_id)
+    install_dir = os.path.join(package_path(), install_id)
     install_paths = prep_copy(unpack_dir, install_dir, package_meta)
 
     check_paths(install_paths)
@@ -50,7 +50,7 @@ def install_from_temp(unpack_dir: str, install_id: str, package_meta: Dict):
 
 
 def remove(install_id: str):
-    install_path = os.path.join(package_path, install_id)
+    install_path = os.path.join(package_path(), install_id)
     
     if not os.path.isdir(install_path):
         logger.warning('Will remove a package, but package files do not exist. This is probably okay.')

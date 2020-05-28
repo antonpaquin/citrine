@@ -5,11 +5,11 @@ from PySide2 import QtWidgets, QtGui, QtCore
 import hivemind_client
 
 from hivemind_ui import app, config
-from hivemind_ui.qt_util import NavButton, HBox, register_xml, SafeQObject
+from hivemind_ui.qt_util import NavButton, HBox, register_xml
 from hivemind_ui.util import threaded
 
 
-class DaemonConnection(SafeQObject):
+class DaemonConnection(QtCore.QObject):
     NO_CONNECTION = 0
     TRY_CONNECT = 1
     CONNECTED = 2

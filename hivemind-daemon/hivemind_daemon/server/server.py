@@ -181,13 +181,13 @@ async def heartbeat(request: web.Request) -> web.Response:
     return web.Response(body=json.dumps({
         'status': 'OK',
         'service': 'hivemind-daemon',
-        'version': '0.0.1',
+        'version': '0.1.0',
     }))
 
 
 async def get_result(request: web.Request) -> web.Response:
     logger.debug('Handling request for method result')
-    fpath = os.path.join(storage.results_path, request.match_info['name'])
+    fpath = os.path.join(storage.results_path(), request.match_info['name'])
     if not os.path.isfile(fpath):
         return web.Response(status=404)
     async with aiofiles.open(fpath, 'rb') as in_f:
