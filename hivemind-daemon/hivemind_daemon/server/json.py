@@ -25,3 +25,8 @@ class HivemindEncoder(JSONEncoder):
 
 
 HivemindEncoder.register_encoder(np.ndarray, lambda x: x.tolist())
+HivemindEncoder.register_encoder(np.float32, float)
+HivemindEncoder.register_encoder(np.uint32, int)
+HivemindEncoder.register_encoder(np.int32, int)
+HivemindEncoder.register_encoder(np.uint8, int)
+HivemindEncoder.register_encoder(np.int8, int)

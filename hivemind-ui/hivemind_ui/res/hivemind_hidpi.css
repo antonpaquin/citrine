@@ -1,0 +1,141 @@
+* {
+    margin: 0px;
+    padding: 0px;
+}
+
+QPushButton {
+    padding: 10px;
+    background-color: #aaa;
+    color: #000;
+}
+
+QLabel {
+    color: #aaa;
+}
+
+NavPanel {
+    min-width: 200px;
+    max-width: 200px;
+    margin: 0px;
+    padding-top: 40px;
+    background-color: #111;
+    border-right: 2px solid #aaa;
+}
+
+NavButton {
+    max-height: 130px;
+    min-height: 130px;
+    padding-bottom: 10px;
+}
+
+NavButton:hover {
+    background-color: #444;
+}
+
+NavButton QLabel {
+    font-size: 20px;
+}
+
+StartupPage {
+    background-color: #222;
+}
+
+ConnectionPage {
+    background-color: #222;
+}
+
+ConnectionPage VBox {
+    min-width: 800px;
+}
+
+ConnectionPage QLineEdit {
+    max-width: 300px;
+    text-align: right;
+}
+
+ConnectionPage ServerStatus {
+    max-width: 600px;
+}
+
+ConfigPage {
+    background-color: #222;
+    padding: 40px;
+}
+
+ConfigPage QLineEdit {
+    padding: 20px;
+}
+
+ConfigPage QTableWidget, ConfigPage QLineEdit {
+    color: #aaa;
+    background-color: #444;
+}
+
+ConfigPage QHeaderView {
+    background-color: #333;
+    color: #aaa;
+}
+
+ConfigPage QTableWidget::item {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+PackagePage, PackagePage QListWidget {
+    background-color: #222;
+}
+
+PackagePage QListWidget {
+    border-top: 2px solid #aaa;
+}
+
+PackagePage QListWidget::item {
+    min-height: 200px;
+    padding: 20px;
+    border-bottom: 2px solid #aaa;
+}
+
+PackagePage PackageEntry QPushButton {
+    margin-right: 40px;
+}
+
+PackagePage PackagePageHeader {
+    margin: 20px;
+    padding: 20px;
+    background-color: #222;
+    border: 4px dashed #aaa;
+}
+
+PackagePage QProgressBar {
+    margin-left: 80px;
+    margin-right: 40px;
+    color: #aaa;
+}
+
+InterfacePage QTreeWidget {
+    background-color: #222;
+    color: #aaa;
+    padding-top: 20px;
+    border-right: 4px solid #aaa;
+}
+
+InterfaceManagePopup QTableWidget {
+    background-color: #222;
+    text-align: center;
+}
+
+InterfaceManagePopup QHeaderView {
+    background-color: #333;
+    color: #aaa;
+    border-bottom: 2px solid #aaa;
+}
+
+InterfaceManagePopup QTableWidget::item {
+    border-bottom: 2px solid #aaa;
+    border-right: 2px solid #aaa;
+}
+
+ErrorMessage {
+    border: 2px solid #aaa;
+    background-color: #444;
+}

@@ -1,10 +1,11 @@
-import os
 from typing import *
+import sys
 
 from PySide2.QtWidgets import QApplication, QWidget
+from PySide2.QtWebEngine import QtWebEngine
 import hivemind_client
 
-from hivemind_ui import ui, util, interface_pkg, js_bridge
+from hivemind_ui import ui, util, interface_pkg, js_bridge, config
 
 
 _root = None  # type: Optional[ui.MainWrapper]
@@ -23,7 +24,11 @@ def get_root() -> ui.MainWrapper:
 
 
 def get_stylesheet():
-    with open(util.get_resource('hivemind.css'), 'r') as in_f:
+    if config.get_config('ui.hidpi'):
+        rname = 'hivemind_hidpi.css'
+    else:
+        rname = 'hivemind.css'
+    with open(util.get_resource(rname), 'r') as in_f:
         style = in_f.read()
     return style
 
@@ -40,6 +45,7 @@ def display_error(message: Union[str, hivemind_client.errors.HivemindClientError
 
 
 def main():
+    QtWebEngine.initialize()
     app = QApplication([])
     app.setStyleSheet(get_stylesheet())
     init()
@@ -49,4 +55,4 @@ def main():
     w = build_window()
     exit_code = app.exec_()
     print('Cleaning up...')
-    exit(exit_code)
+    sys.exit(exit_code)

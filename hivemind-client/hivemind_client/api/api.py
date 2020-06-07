@@ -21,13 +21,14 @@ class PackageClient(object):
 
     def install(
             self,
+            name: Optional[str] = None,
             specfile: Optional[str] = None,
             localfile: Optional[str] = None,
             url: Optional[str] = None,
             package_hash: Optional[str] = None,
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ) -> Dict:
-        request_data = util.package_install_params(specfile, localfile, url, package_hash)
+        request_data = util.package_install_params(name, specfile, localfile, url, package_hash)
         req = AsyncRequest(
             server=self.server,
             endpoint='/package/install',
@@ -38,13 +39,14 @@ class PackageClient(object):
 
     def fetch(
             self,
+            name: Optional[str] = None,
             specfile: Optional[str] = None,
             localfile: Optional[str] = None,
             url: Optional[str] = None,
             package_hash: Optional[str] = None,
             progress_callback: Optional[Callable[[Dict], None]] = None,
     ) -> Dict:
-        request_data = util.package_install_params(specfile, localfile, url, package_hash)
+        request_data = util.package_install_params(name, specfile, localfile, url, package_hash)
         req = AsyncRequest(
             server=self.server,
             endpoint='/package/install',

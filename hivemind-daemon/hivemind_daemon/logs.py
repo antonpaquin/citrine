@@ -28,7 +28,7 @@ class HivemindFormatter(logging.Formatter):
             'request_info': async_job.request_info if async_job else None,
         }
             
-        return json.dumps(res)
+        return json.dumps(res, cls=server.json.HivemindEncoder)
         
 
 def init_logging():

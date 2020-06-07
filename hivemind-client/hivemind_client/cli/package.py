@@ -10,24 +10,36 @@ subcommand_handler, dispatch = util.subcommand_registry()
 
 
 def install_spec_args(args) -> List[Dict]:
-    if args['specfile']:
+    if args['name']:
+        res = []
+        for pkg_name in args['name']:
+            res.append({'name': pkg_name})
+        return res
+            
+    elif args['specfile']:
         res = []
         for fname in args['specfile']:
             res.append({'specfile': fname})
         return res
-    
-    elif 'localfile' in args:
+
+    elif 'localfile' in args and args['localfile'] is not None:
         return [{'localfile': args['localfile']}]
     
-    elif 'url' in args and 'hash' in args:
+    elif (
+            'url' in args
+            and args['url'] is not None
+            and 'hash' in args
+            and args['hash'] is not None
+    ):
         return [{'url': args['url'], 'package_hash': args['hash']}]
     
     else:
         raise errors.InvalidOptions('Invalid options for package specification', data={
             'allowed': [
-                ['specfile'],
-                ['localfile'],
-                ['url', 'hash'],
+                ['name'],
+                ['--specfile'],
+                ['--localfile'],
+                ['--url', '--hash'],
             ]
         })
     
@@ -38,7 +50,10 @@ def install_or_fetch(args, command):
     specs = install_spec_args(args)
 
     for spec in specs:
-        if 'specfile' in spec:
+        if 'name' in spec:
+            name = spec['name']
+            fill_bar, finish_bar = util.make_progress_bar(f'Downloading package {name}: ')
+        elif 'specfile' in spec:
             name = spec['specfile']
             fill_bar, finish_bar = util.make_progress_bar(f'Downloading package for {name}: ')
         elif 'url' in spec:
@@ -49,12 +64,11 @@ def install_or_fetch(args, command):
             fill_bar, finish_bar = None, None
         else:
             raise errors.NoBranch(__file__)
-
+        
         if command == 'install':
             print(f'Installing {name}')
         elif command == 'fetch':
             print(f'Fetching {name}')
-
 
         try:
             if command == 'install':

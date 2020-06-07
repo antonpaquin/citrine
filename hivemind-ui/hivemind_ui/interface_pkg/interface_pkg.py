@@ -7,6 +7,7 @@ import zipfile
 
 import cerberus
 import hivemind_client
+import requests
 
 from hivemind_ui import config, errors
 import hivemind_ui.interface_pkg.download as download
@@ -121,8 +122,8 @@ def init_interfaces():
     download_dir = os.path.join(config.get_config('storage.rootpath'), 'download')
     if not os.path.isdir(download_dir):
         os.makedirs(download_dir)
-        
-        
+
+
 def synchronize():
     for interface_name in _check_wanted_interfaces():
         install_interface(interface_name)
@@ -147,6 +148,7 @@ def list_interfaces() -> List[Interface]:
     res = []
     for fname in os.listdir(interface_dir):
         fpath = os.path.join(interface_dir, fname)
+        print(f'List interface: fpath is {fpath}')
         res.append(Interface.load(fpath))
     return res
 
@@ -217,17 +219,16 @@ def _parse_metadata_file(fname: str):
 
 
 def get_package_interface_index() -> Dict[str, List[str]]:
-    # TODO: package_interface_index on web
-    # This is a stubbed out version that pulls from the local machine
-    # Eventually this wants to 'requests' out to amazon or something
     global package_interface_index
     sep = '|'
-    repo_root = '/home/anton/code/hivemind/mock-repo'
 
     if package_interface_index is None:
-        fname = os.path.join(repo_root, 'ui', 'package_interface')
-        with open(fname, 'r') as in_f:
-            raw = in_f.readlines()
+        repo_url = config.get_config('repo.package_index')
+        try:
+            r = requests.get(repo_url, timeout=10)
+            raw = r.text.strip().split('\n')
+        except requests.exceptions.RequestException:
+            raise errors.DownloadError('Failed to download package-interface index')
 
         package_interface_index = {}
         for line in raw:
@@ -240,17 +241,16 @@ def get_package_interface_index() -> Dict[str, List[str]]:
 
 
 def get_interface_index() -> Dict[str, Tuple[str, str]]:
-    # TODO: interface_index on web
-    # This is a stubbed out version that pulls from the local machine
-    # Eventually this wants to 'requests' out to amazon or something
     global interface_index
     sep = '|'
-    repo_root = '/home/anton/code/hivemind/mock-repo'
 
     if interface_index is None:
-        fname = os.path.join(repo_root, 'ui', 'index')
-        with open(fname, 'r') as in_f:
-            raw = in_f.readlines()
+        repo_url = config.get_config('repo.index')
+        try:
+            r = requests.get(repo_url, timeout=10)
+            raw = r.text.strip().split('\n')
+        except requests.exceptions.RequestException:
+            raise errors.DownloadError('Failed to download package-interface index')
 
         interface_index = {}
         for line in raw:

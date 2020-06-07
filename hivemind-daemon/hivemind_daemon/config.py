@@ -1,10 +1,21 @@
 import os
+import platform
 from typing import *
+import warnings
 import yaml
 
 
-# TODO: windows path
-config_root = os.path.join(os.getenv('HOME'), '.config', 'hivemind')
+_platform = platform.system()
+if _platform == 'Linux':
+    storage_path = os.path.join(os.getenv('HOME'), '.cache', 'hivemind')
+    config_path = os.path.join(os.getenv('HOME'), '.config', 'hivemind')
+elif _platform == 'Windows':
+    storage_path = os.path.join(os.getenv('APPDATA'), 'hivemind')
+    config_path = os.path.join(os.getenv('APPDATA'), 'hivemind')
+else:
+    warnings.warn(f'Unknown platform {_platform}; defaulting storage to working directory')
+    storage_path = os.getcwd()
+    config_path = os.getcwd()
 
 
 default_config = {
@@ -12,13 +23,13 @@ default_config = {
         'host': '127.0.0.1',
         'port': 5402,
     },
-    'storage_path': os.path.join(os.getenv('HOME'), '.cache', 'hivemind'),
+    'storage_path': storage_path,
     'worker_threads': 16,
+    'repository_url': 'https://raw.githubusercontent.com/antonpaquin/hivemind-repo/master/daemon/index',
 }
 
 # Possible feature: disable debug information in error responses
 # Possible feature: enable / disable package changes
-# Probable feature: specify repo URL
 
 daemon_config = None  # type: Dict
 
@@ -47,7 +58,7 @@ def init_config():
     global daemon_config
 
     base_config = default_config
-    config_fname = os.path.join(config_root, 'daemon.yaml')
+    config_fname = os.path.join(config_path, 'daemon.yaml')
 
     if os.path.isfile(config_fname):
         with open(config_fname, 'r') as in_f:
@@ -57,8 +68,8 @@ def init_config():
 
     daemon_config = recursive_merge(base_config, user_config)
 
-    if not os.path.isdir(config_root):
-        os.makedirs(config_root)
+    if not os.path.isdir(config_path):
+        os.makedirs(config_path)
 
     if not os.path.exists(config_fname):
         with open(config_fname, 'w') as out_f:

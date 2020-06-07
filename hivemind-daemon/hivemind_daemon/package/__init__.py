@@ -1,5 +1,4 @@
-import hivemind_daemon.package.db as db
-import hivemind_daemon.package.install as install
-import hivemind_daemon.package.load as load
+from . import db, install, load, repo
+# ORM is exposed through DB -- it's really just for neatness that it's broken out into its own file
 
-# ORM objects available through db -- it's really just for neatness that it's broken out into its own file
+from .orm import DBModel, DBPackage

@@ -74,6 +74,12 @@ def command_result(args):
     sys.stdout.buffer.write(result)
 
 
+@subcommand_handler('install')
+def command_install(args, parser):
+    # Alias for "package install"
+    package.dispatch(parser, args, 'command')
+
+
 @subcommand_handler('package')
 def command_package(args, parser):
     package.dispatch(parser, args, 'package_command')

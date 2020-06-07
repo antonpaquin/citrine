@@ -3,7 +3,7 @@ import os
 import shutil
 from typing import Dict, Tuple, List
 
-from hivemind_daemon import errors, package
+from hivemind_daemon import errors
 from hivemind_daemon.storage.storage import package_path
 
 
@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 def prep_copy(unpack_dir: str, install_dir: str, package_meta: Dict) -> List[Tuple[str, str]]:
     res = []
-    package_from = os.path.join(unpack_dir, 'package.json')
-    package_to = os.path.join(install_dir, 'package.json')
+    package_from = os.path.join(unpack_dir, 'meta.json')
+    package_to = os.path.join(install_dir, 'meta.json')
     res.append((package_from, package_to))
 
     module_from = os.path.join(unpack_dir, package_meta['module'])
@@ -24,6 +24,14 @@ def prep_copy(unpack_dir: str, install_dir: str, package_meta: Dict) -> List[Tup
         model_from = os.path.join(unpack_dir, model_spec['file'])
         model_to = os.path.join(install_dir, f'{model_name}.{model_spec["type"]}')
         res.append((model_from, model_to))
+        
+    tracked_files = [x[0] for x in res]
+    for extra_file in os.listdir(unpack_dir):
+        extra_from = os.path.join(unpack_dir, extra_file)
+        if extra_from in tracked_files:
+            continue
+        extra_to = os.path.join(install_dir, extra_file)
+        res.append((extra_from, extra_to))
 
     return res
 
@@ -35,8 +43,8 @@ def check_paths(install_paths: List[Tuple[str, str]]):
 
 
 def install_from_temp(unpack_dir: str, install_id: str, package_meta: Dict):
-    if not os.path.isfile(os.path.join(unpack_dir, 'package.json')):
-        raise errors.PackageInstallError(f'No package.json at {unpack_dir}', 400)
+    if not os.path.isfile(os.path.join(unpack_dir, 'meta.json')):
+        raise errors.PackageInstallError(f'No meta.json at {unpack_dir}', 400)
 
     install_dir = os.path.join(package_path(), install_id)
     install_paths = prep_copy(unpack_dir, install_dir, package_meta)

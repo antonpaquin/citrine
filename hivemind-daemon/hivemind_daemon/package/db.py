@@ -4,14 +4,12 @@ import sqlite3
 from typing import *
 import threading
 
-from hivemind_daemon import errors, storage
+from hivemind_daemon import errors, storage, core
 from hivemind_daemon.package.orm import DBPackage, DBModel
 
 
 connection_pool = threading.local()
 connection_pool.conn = None
-
-package_endpoints = {}  # type: Dict[int, List[str]]
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +41,6 @@ def get_conn():
         # worker threads should have something available via start_connection()
         connection_pool.conn = sqlite3.connect(_db_path())
     return connection_pool.conn
-
-
-def mark_package_endpoint(package_id: int, endpoint: str):
-    # Transient and populated as packages are loaded and create their endpoints
-    # This isn't used for anything internal, it's just for showing what endpoints a package owns under /package/list
-    if package_id not in package_endpoints:
-        package_endpoints[package_id] = []
-    package_endpoints[package_id].append(endpoint)
 
 
 class Cursor:
@@ -125,8 +115,7 @@ def list_packages() -> Dict:
     packages = []
     for pkg in DBPackage.get_all():
         entry = pkg.to_dict()
-        if pkg.rowid in package_endpoints:
-            entry['endpoints'] = package_endpoints[pkg.rowid]
+        entry['endpoints'] = core.list_active_endpoint_names(pkg.rowid)
         packages.append(entry)
     return {'packages': packages}
 

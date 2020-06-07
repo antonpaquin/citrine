@@ -8,12 +8,15 @@ from hivemind_client import errors
 
 
 def package_install_params(
+        name: str = None,
         specfile: str = None,
         localfile: str = None,
         url: str = None,
         package_hash: str = None,
 ) -> Dict:
-    if specfile is not None:
+    if name is not None:
+        request_data = {'jsn': {'name': name}}
+    elif specfile is not None:
         if not os.path.isfile(specfile):
             raise errors.FileNotFound(f'Could not find file {specfile}')
         with open(specfile, 'rb') as in_f:
@@ -24,7 +27,9 @@ def package_install_params(
     elif url is not None and package_hash is not None:
         request_data = {'jsn': {'url': url, 'hash': package_hash}}
     else:
-        raise errors.InvalidOptions('You must specify one of "specfile", "localfile", ("url" + "package_hash")')
+        raise errors.InvalidOptions(
+            'You must specify "name" or one of "specfile", "localfile", ("url" + "package_hash")'
+        )
     
     return request_data
 

@@ -35,15 +35,15 @@ class AsyncTunnel:
         return res
 
     async def send_async(self, key, value):
-        if key in self.b_to_a:
-            raise errors.TransportKeyError("Key already in use: async double connect")
         with self._lock:  # yes, locking the event loop. I promise it won't be for long.
             if key not in self.b_to_a:
                 self.b_to_a[key] = queue.Queue()
+            elif not self.b_to_a[key].empty():
+                raise errors.TransportKeyError('Key already in use: async double connect')
             # In practice, 'block=False' shouldn't matter. However, better to be explicit.
             self.b_to_a[key].put(value, block=False)
             if key in self.a_to_b:
-                return self.a_to_b[key]
+                return self.a_to_b.pop(key)
             waiter = asyncio.Event()
             self.notify[key] = waiter.set
         await waiter.wait()

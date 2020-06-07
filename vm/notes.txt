@@ -1,0 +1,36 @@
+VM requires some setup:
+
+- Install windows
+	Click through setup
+	user "build" / pass "build"
+
+- Set up SSH
+	win
+	-> manage optional features
+	-> add a feature
+	-> openssh
+	(There might be more to start it, don't remember entirely)
+
+- Virtualbox port forwarding
+	settings
+	-> network
+	-> Advanced
+	-> Port forwarding
+	Name: ssh-windows-build
+	Protocol: TCP
+	Host IP: 127.0.0.1
+	Host Port: 3022
+	Guest IP: $(in powershell, "ipconfig" --> IPv4 Address)
+	Guest Port: 22
+
+- Install python3.7 
+	SCP the binary (in this directory) (https://www.python.org/downloads/windows/)
+	gui navigate C:\Users\build and click it
+
+- vc_redist.x64.exe
+    may contain some DLLs that are needed somewhere?
+    try it without next time I'm setting up windows
+
+- Run python
+	Whatever shell you enter with the default SSH is bad.
+	Run "powershell" and then things start to work.

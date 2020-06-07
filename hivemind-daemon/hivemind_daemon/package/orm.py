@@ -2,8 +2,8 @@ from distutils.version import LooseVersion
 from typing import Dict, Iterable
 
 from hivemind_daemon import errors
-import hivemind_daemon.package.db as db
 from hivemind_daemon.server.json import HivemindEncoder
+from . import db
 
 
 class DBPackage:
@@ -208,23 +208,6 @@ class DBModel:
             return DBModel(package_id, name, model_type, install_path, rowid)
         else:
             raise errors.DatabaseMissingEntry(f'Model {model_name} under package at index {package_id} not found')
-
-    @staticmethod
-    def from_names(package_name: str, model_name: str) -> 'DBModel':
-        # Not guaranteed to be unique
-        with db.Cursor() as cur:
-            cur.execute(
-                'SELECT model.rowid, model.package_id, model.name, model.type, model.install_path'
-                ' FROM model INNER JOIN package ON model.package_id = package.rowid'
-                ' WHERE package.name = ? AND model.name = ?',
-                (package_name, model_name)
-            )
-            results = cur.fetchone()
-        if results:
-            rowid, package_id, name, model_type, install_path = results
-            return DBModel(package_id, name, model_type, install_path, rowid)
-        else:
-            raise errors.DatabaseMissingEntry(f'Model {model_name} under package {package_name} not found')
 
     @staticmethod
     def all_from_package(package_id: int) -> Iterable['DBModel']:

@@ -81,9 +81,10 @@ class InterfaceViewEntry(QtWidgets.QTreeWidgetItem):
 
 
 class InterfaceWebPage(QtWebEngineWidgets.QWebEnginePage):
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, display: QtWebEngineWidgets.QWebEngineView):
+        super().__init__(display)
         self.view: interface_pkg.InterfaceView = None
+        self.display = display
 
         self.client = js_bridge.HivemindJSClient()
         self.scripts().insert(self.client)
@@ -92,7 +93,11 @@ class InterfaceWebPage(QtWebEngineWidgets.QWebEnginePage):
 
     def load_view(self, view: interface_pkg.InterfaceView):
         self.view = view
-        self.load(QtCore.QUrl('file://' + view.get_page()))
+        url = QtCore.QUrl.fromLocalFile(view.get_page())
+        with open(view.get_page(), 'r') as in_f:
+            content = in_f.read()
+        self.setHtml(content, url)  # load() _should_ work, but doesn't under windows.
+        #self.load(url)
 
     def bind_client(self, ok: bool):
         key = self.client.key

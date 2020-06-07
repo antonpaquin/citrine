@@ -70,19 +70,10 @@ async def package_fetch(request: web.Request) -> AsyncFuture:
     """
     logger.debug('Handling request for method package.fetch')
     params = await package_install_spec(request)
-    if 'localfile' in params:
-        return run_async(package.install.install_package_file, kwargs={
-            'localfile': params['localfile'],
-            'activate': False,
-        }, request_info=make_request_info('package.fetch'))
-    elif 'url' in params and 'hash' in params:
-        return run_async(package.install.install_package_url, kwargs={
-            'url': params['url'],
-            'package_hash': params['hash'],
-            'activate': False,
-        }, request_info=make_request_info('package.fetch'))
-    else:
+    install_fn, kwargs = package_install_command(params, activate=True)
+    if install_fn is None:
         raise errors.InternalError('Invalid package spec made it through validation')
+    return run_async(install_fn, kwargs=kwargs, request_info=make_request_info('package.fetch'))
 
 
 async def package_install(request: web.Request) -> AsyncFuture:
@@ -91,19 +82,10 @@ async def package_install(request: web.Request) -> AsyncFuture:
     """
     logger.debug('Handling request for method package.install')
     params = await package_install_spec(request)
-    if 'localfile' in params:
-        return run_async(package.install.install_package_file, kwargs={
-            'localfile': params['localfile'],
-            'activate': True,
-        }, request_info=make_request_info('package.install'))
-    elif 'url' in params and 'hash' in params:
-        return run_async(package.install.install_package_url, kwargs={
-            'url': params['url'],
-            'package_hash': params['hash'],
-            'activate': True,
-        }, request_info=make_request_info('package.install'))
-    else:
+    install_fn, kwargs = package_install_command(params, activate=True)
+    if install_fn is None:
         raise errors.InternalError('Invalid package spec made it through validation')
+    return run_async(install_fn, kwargs=kwargs, request_info=make_request_info('package.install'))
 
 
 async def package_activate(request: web.Request) -> AsyncFuture:
@@ -244,6 +226,9 @@ def build_app():
             method(route, wrap_sync(fn)),
             method('/async' + route, wrap_async(fn))
         ])
+
+    # override default 1M -> 1G
+    app._client_max_size = 1024 ** 3
 
     logger.debug('Async server ready')
     return app

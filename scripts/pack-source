@@ -1,0 +1,32 @@
+#! /bin/bash
+
+SRC_DIR="$(dirname "${BASH_SOURCE[0]}")"
+cd "$SRC_DIR"
+cd ..
+
+set -ex
+
+SRC_FILES=($(find . \( \
+	-path "./.*" \
+	-o -path "./test_env" \
+	-o -path "./VirtualBox VMs" \
+	-o -path "./vm" \
+	-o -path "./scripts" \
+	-o -path "./docker" \
+	-o -path "./env" \
+	-o -path "./artifacts" \
+	-o -path "*.git" \
+	-o -path "*.egg-info" \
+	-o -path "*.idea" \
+	-o -name "hivemind.log" \
+	-o -name "*.pyc" \
+	-o -path "./activate" \
+	-o -path "./hivemind-repo" \
+	-o -path "./hivemind-ui/qtcreator" \
+	-o -path "./hivemind-ui/test" \
+	-o -path "./hivemind-daemon/onnx" \
+	-o -path "./hivemind-daemon/onnx" \
+	\) -prune -o -type f -print))
+
+rm artifacts/hivemind_src.zip || true
+zip -r9 artifacts/hivemind_src.zip "${SRC_FILES[@]}"

@@ -13,7 +13,7 @@ __all__ = [
     'download_rel',
     'download_path',
     'get_package_module',
-    'get_package_json',
+    'get_package_meta',
     'get_model_file',
     'init_storage',
 ]
@@ -47,8 +47,8 @@ def get_package_module(package: db.DBPackage) -> str:
     return os.path.join(package_path(), package.install_path, 'module.py')
 
 
-def get_package_json(package: db.DBPackage) -> str:
-    return os.path.join(package_path(), package.install_path, 'package.json')
+def get_package_meta(package: db.DBPackage) -> str:
+    return os.path.join(package_path(), package.install_path, 'meta.json')
 
 
 def get_model_file(model: db.DBModel) -> str:

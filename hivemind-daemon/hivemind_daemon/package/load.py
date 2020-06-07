@@ -1,13 +1,14 @@
 import importlib.util
 import json
 import logging
+import os
 import threading
 from typing import Dict, Any, Optional
 
 import cerberus
 
-import hivemind_daemon.package.db as db
-from hivemind_daemon import storage, errors
+from hivemind_daemon import storage, errors, package
+from hivemind_daemon.package import db
 
 
 logger = logging.getLogger(__name__)
@@ -57,13 +58,13 @@ load_context = {'package_id': None}  # type: Dict[str, Optional[Any]]
 load_context_lock = threading.Lock()
 
 
-def load_package_json(name):
+def load_package_meta(name):
     with open(name, 'r') as in_f:
         jsn = json.load(in_f)
 
     v = cerberus.Validator(schema=package_validator)
     if not v.validate(jsn):
-        raise errors.PackageInstallError(f'Improperly formatted package.json', data=v.errors)
+        raise errors.PackageInstallError(f'Improperly formatted meta.json', data=v.errors)
 
     return v.document
 
@@ -76,7 +77,7 @@ def get_loading_package_id():
 
 def init_packages():
     logger.info('Loading existing packages on startup')
-    db.get_conn()
+    package.db.get_conn()
     for db_package in db.DBPackage.get_active_packages():
         load_package(db_package)
         
@@ -89,7 +90,7 @@ def activate_package(name: str, version: Optional[str]):
         db_package = db.DBPackage.from_name_version(name, version)
     else:
         db_package = db.DBPackage.from_name_latest(name)
-    _set_package_active(db_package, True)
+    set_package_active(db_package, True)
     return {'status': 'OK'}
 
 
@@ -99,11 +100,11 @@ def deactivate_package(name: str, version: Optional[str]):
         db_package = db.DBPackage.from_name_version(name, version)
     else:
         db_package = db.DBPackage.from_name_latest(name)
-    _set_package_active(db_package, False)
+    set_package_active(db_package, False)
     return {'status': 'OK'}
 
 
-def _set_package_active(db_package: db.DBPackage, active: bool):
+def set_package_active(db_package: db.DBPackage, active: bool):
     if db_package.rowid is None:
         raise errors.InternalError('Tried to activate a package not in the database', data=db_package.to_dict())
     load_package(db_package)
@@ -134,7 +135,11 @@ def load_package(db_package: db.DBPackage):
     useless_module_name = 'userpackage'
     spec = importlib.util.spec_from_file_location(useless_module_name, module_file)
     mod = importlib.util.module_from_spec(spec)
+    
+    work_dir = os.getcwd()
+    exec_dir = os.path.join(storage.package_path(), db_package.install_path)
     try:
+        os.chdir(exec_dir)
         with PackageContext(package_id=db_package.rowid):
             logger.info('BEGIN loading module', log_ctx)
             spec.loader.exec_module(mod)
@@ -144,4 +149,6 @@ def load_package(db_package: db.DBPackage):
     except Exception as e:
         logger.warning('FAIL loading module', log_ctx)
         raise errors.PackageInstallError(f'Failed to load module for package {db_package.name}', data=str(e))
+    finally:
+        os.chdir(work_dir)
 

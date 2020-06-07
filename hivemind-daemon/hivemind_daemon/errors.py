@@ -32,6 +32,7 @@ class ModelRunError(InternalError): name = 'Model Run Error'
 class PackageError(HivemindException): name = 'Package Error'
 class PackageInstallError(PackageError): name = 'Package Install Error'
 class PackageStorageError(PackageError): name = 'Package Storage Error'
+class RepositoryError(PackageError): name = 'Repository Error'
 
 class DownloadException(HivemindException): name = 'Download Exception'
 class DownloadCollision(DownloadException): name = 'Download Collision'

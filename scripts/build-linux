@@ -1,0 +1,12 @@
+#! /bin/bash
+
+SRC_DIR="$(dirname "${BASH_SOURCE[0]}")"
+cd "$SRC_DIR"
+cd ..
+
+set -ex
+
+cp docker/build-all.yml docker-compose.yml
+docker-compose up
+rm docker-compose.yml
+

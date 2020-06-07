@@ -7,13 +7,15 @@ def package_subparser(parser: argparse.ArgumentParser):
     command = parser.add_subparsers(dest='package_command')
 
     install = command.add_parser('install')
-    install.add_argument('specfile', nargs='*')
+    install.add_argument('name', nargs='*')
+    install.add_argument('--specfile', nargs='+')
     install.add_argument('--localfile')
     install.add_argument('--url')
     install.add_argument('--hash')
 
     fetch = command.add_parser('fetch')
-    fetch.add_argument('specfile', nargs='*')
+    fetch.add_argument('name', nargs='*')
+    fetch.add_argument('--specfile', nargs='+')
     fetch.add_argument('--localfile')
     fetch.add_argument('--url')
     fetch.add_argument('--hash')
@@ -34,19 +36,6 @@ def package_subparser(parser: argparse.ArgumentParser):
 
 
 def cli_args(parser: argparse.ArgumentParser):
-    """"""
-    ' e.x.'
-    'hivemind install foo.hivespec'
-    'hivemind daemon-install link=foo hash=auto'
-    'hivemind daemon-install file=/foo/bar/baz'  # alias for type=file
-    'hivemind status'  # alias for heartbeat
-    'hivemind run twdne3 @foo'  # load file as json, send it
-    'hivemind run twdne3 a=@foo b.a=foo b.c=foo b.d.0=foo'  # build a dictionary with jq-like syntax
-    'hivemind _run twdne3 a=@foo b=0.5 c=[[0.1]]'
-    'hivemind result foohash'  # get-result
-
-    'hivemind run TWDNEv3 truncation=0.7 -out images[0]=foo.png'
-    
     command = parser.add_subparsers(dest='command', help='')
     
     package = command.add_parser('package')
@@ -69,6 +58,13 @@ def cli_args(parser: argparse.ArgumentParser):
     
     result = command.add_parser('result')
     result.add_argument('hash')
+
+    install_alias = command.add_parser('install')
+    install_alias.add_argument('name', nargs='*')
+    install_alias.add_argument('--specfile', nargs='+')
+    install_alias.add_argument('--localfile')
+    install_alias.add_argument('--url')
+    install_alias.add_argument('--hash')
 
 
 def main():

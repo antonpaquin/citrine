@@ -8,7 +8,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'pyside2',
-        'websockets'
+        'requests',
+        'websockets',
     ],
     entry_points={
         'console_scripts': [

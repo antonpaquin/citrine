@@ -1,0 +1,3 @@
+- windows: prune extraneous DLLs, packages from specfile
+- windows: put things in appdata and not .cache
+- windows probably wants a self-pipe -- ctrl+C doesn't kill the daemon until a request comes in

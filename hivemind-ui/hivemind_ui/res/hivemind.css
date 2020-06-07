@@ -4,7 +4,7 @@
 }
 
 QPushButton {
-    padding: 10px;
+    padding: 5px;
     background-color: #aaa;
     color: #000;
 }
@@ -14,18 +14,18 @@ QLabel {
 }
 
 NavPanel {
-    min-width: 200px;
-    max-width: 200px;
+    min-width: 100px;
+    max-width: 100px;
     margin: 0px;
-    padding-top: 40px;
+    padding-top: 20px;
     background-color: #111;
     border-right: 2px solid #aaa;
 }
 
 NavButton {
-    max-height: 130px;
-    min-height: 130px;
-    padding-bottom: 10px;
+    max-height: 65px;
+    min-height: 65px;
+    padding-bottom: 5px;
 }
 
 NavButton:hover {
@@ -33,7 +33,7 @@ NavButton:hover {
 }
 
 NavButton QLabel {
-    font-size: 20px;
+    font-size: 10px;
 }
 
 StartupPage {
@@ -45,25 +45,25 @@ ConnectionPage {
 }
 
 ConnectionPage VBox {
-    min-width: 800px;
+    min-width: 400px;
 }
 
 ConnectionPage QLineEdit {
-    max-width: 300px;
+    max-width: 150px;
     text-align: right;
 }
 
 ConnectionPage ServerStatus {
-    max-width: 600px;
+    max-width: 300px;
 }
 
 ConfigPage {
     background-color: #222;
-    padding: 40px;
+    padding: 20px;
 }
 
 ConfigPage QLineEdit {
-    padding: 20px;
+    padding: 10px;
 }
 
 ConfigPage QTableWidget, ConfigPage QLineEdit {
@@ -77,8 +77,8 @@ ConfigPage QHeaderView {
 }
 
 ConfigPage QTableWidget::item {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 PackagePage, PackagePage QListWidget {
@@ -90,33 +90,33 @@ PackagePage QListWidget {
 }
 
 PackagePage QListWidget::item {
-    min-height: 200px;
-    padding: 20px;
+    min-height: 100px;
+    padding: 10px;
     border-bottom: 2px solid #aaa;
 }
 
 PackagePage PackageEntry QPushButton {
-    margin-right: 40px;
+    margin-right: 20px;
 }
 
 PackagePage PackagePageHeader {
-    margin: 20px;
-    padding: 20px;
+    margin: 10px;
+    padding: 10px;
     background-color: #222;
-    border: 4px dashed #aaa;
+    border: 2px dashed #aaa;
 }
 
 PackagePage QProgressBar {
-    margin-left: 80px;
-    margin-right: 40px;
+    margin-left: 40px;
+    margin-right: 20px;
     color: #aaa;
 }
 
 InterfacePage QTreeWidget {
     background-color: #222;
     color: #aaa;
-    padding-top: 20px;
-    border-right: 4px solid #aaa;
+    padding-top: 10px;
+    border-right: 2px solid #aaa;
 }
 
 InterfaceManagePopup QTableWidget {

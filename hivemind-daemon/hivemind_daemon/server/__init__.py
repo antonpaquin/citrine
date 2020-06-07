@@ -1,3 +1,2 @@
-from hivemind_daemon.server.server import run_server
-import hivemind_daemon.server.json as json
-import hivemind_daemon.server.parallel as parallel
+from . import json, parallel, server
+from .server import run_server

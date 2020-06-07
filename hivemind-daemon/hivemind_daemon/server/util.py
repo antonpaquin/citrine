@@ -6,7 +6,7 @@ from typing import *
 from aiohttp import web
 import cerberus
 
-from hivemind_daemon import errors
+from hivemind_daemon import errors, package
 from hivemind_daemon.server.json import HivemindEncoder
 from hivemind_daemon.server.parallel import AsyncFuture
 
@@ -17,6 +17,7 @@ __all__ = [
     'wrap_async',
     'get_formdata',
     'package_install_spec',
+    'package_install_command',
     'expect_json',
     'make_request_info',
 ]
@@ -112,11 +113,39 @@ async def package_install_spec(request: web.Request):
                 'required': True,
             },
         })
+    elif 'name' in jsn:
+        validator = cerberus.Validator(schema={
+            'name': {
+                'type': 'string',
+                'required': True,
+            },
+        })
     else:
-        raise errors.ValidationError('You must provide one of "localfile" or "url"')
+        raise errors.ValidationError('You must provide one of "localfile", "url", "name"')
     if not validator.validate(jsn):
         raise errors.ValidationError('Request failed to validate', data=validator.errors)
     return validator.document
+
+
+def package_install_command(params: Dict, activate: bool) -> Tuple[Optional[Callable], Optional[Dict]]:
+    if 'localfile' in params:
+        return package.install.install_package_file, {
+            'localfile': params['localfile'],
+            'activate': activate,
+        }
+    elif 'url' in params and 'hash' in params:
+        return package.install.install_package_url, {
+            'url': params['url'],
+            'package_hash': params['hash'],
+            'activate': activate,
+        }
+    elif 'name' in params:
+        return package.install.install_package_name, {
+            'name': params['name'],
+            'activate': activate,
+        }
+    else:
+        return None, None
 
 
 async def expect_json(request: web.Request, validator: cerberus.Validator) -> Dict:

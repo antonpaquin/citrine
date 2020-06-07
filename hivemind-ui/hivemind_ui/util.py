@@ -8,7 +8,7 @@ work_queue = queue.Queue()
 
 def init_threadpool():
     global threadpool
-    threadpool = [threading.Thread(target=worker_thread, daemon=True, name=f'Worker-{idx}') for idx in range(1)]
+    threadpool = [threading.Thread(target=worker_thread, daemon=True, name=f'Worker-{idx}') for idx in range(16)]
     [t.start() for t in threadpool]
 
 

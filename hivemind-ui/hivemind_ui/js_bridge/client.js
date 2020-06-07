@@ -39,7 +39,7 @@ class HivemindClient {
             callback(resp);
         } else {
             /* TODO handle errors */
-            console.log(resp);
+            console.log(msg);
         }
     }
 

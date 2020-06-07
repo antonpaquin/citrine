@@ -1,0 +1,21 @@
+#! /bin/bash
+
+SRC_DIR="$(dirname "${BASH_SOURCE[0]}")"
+cd "$SRC_DIR"
+cd ..
+
+set -ex
+
+"$SRC_DIR"/pack-source
+
+sshpass -p 'build' ssh -p 3022 build@localhost echo "vm is live"
+
+sshpass -p 'build' scp -P 3022 artifacts/hivemind_src.zip build@localhost:hivemind_src.zip
+sshpass -p 'build' scp -P 3022 vm/build-windows.ps1 build@localhost:build-windows.ps1
+
+sshpass -p 'build' ssh -p 3022 build@localhost powershell .\\build-windows.ps1
+
+rm -r artifacts/hivemind-daemon-win10 || true
+rm -r artifacts/hivemind-client-win10 || true
+rm -r artifacts/hivemind-ui-win10 || true
+sshpass -p 'build' scp -r -P 3022 build@localhost:hivemind/artifacts/* artifacts/
