@@ -13,7 +13,72 @@ class DaemonLink(object):
         self.port = port
 
 
-class AsyncRequest(object):
+class HivemindRequest(object):
+    def __init__(
+            self,
+            server: DaemonLink,
+            endpoint: str,
+            params: Optional[Dict] = None,
+            files: Optional[Dict[str, bytes]] = None,
+            jsn: Optional[Dict] = None,
+            method: str = 'post',
+    ):
+        """
+        :param server:
+        :param endpoint:
+        :param params: Passed to requests 'params'
+        :param files: Passed to requests 'files'
+        :param jsn: Passed to requests 'json'
+        :param method: Which HTTP method to use
+        """
+        self.server = server
+        self.method = method
+
+        self.url = f'http://{server.host}:{server.port}{endpoint}'
+        self.request_args = {}
+        if params is not None:
+            self.request_args['params'] = params
+        if files is not None:
+            self.request_args['files'] = files
+        if json is not None:
+            self.request_args['json'] = jsn
+
+    def send(self):
+        try:
+            if self.method == 'post':
+                r = requests.post(self.url, **self.request_args, timeout=10)
+            elif self.method == 'get':
+                r = requests.get(self.url, **self.request_args, timeout=10)
+            else:
+                r = requests.request(self.method, self.url, **self.request_args, timeout=10)
+        except requests.exceptions.ConnectTimeout:
+            raise errors.ConnectionError('Connection timed out')
+        except requests.exceptions.ConnectionError:
+            raise errors.ConnectionRefused('Cannot connect to server')
+
+        resp = self._parse_response(r)
+        return resp
+    
+    def run(self):
+        raise NotImplementedError('Stub!')
+
+    @staticmethod
+    def _parse_response(response):
+        try:
+            resp = json.loads(response.content)
+        except json.JSONDecodeError:
+            raise errors.ServerError('Malformed server response', data={'response': response.content.decode('utf-8')})
+        if response.status_code != 200:
+            raise errors.ServerError('Server rejected request', data=resp)
+        return resp
+    
+    
+class SyncRequest(HivemindRequest):
+    def run(self):
+        return self.send()
+
+
+class AsyncRequest(HivemindRequest):
     def __init__(
             self,
             server: DaemonLink,
@@ -25,32 +90,24 @@ class AsyncRequest(object):
             cancel: bool = True
     ):
         """
-        :param server:
-        :param endpoint:
-        :param params: Passed to requests 'params'
-        :param files: Passed to requests 'files'
-        :param jsn: Passed to requests 'json'
-        :param method: Which HTTP method to use
         :param cancel:
             If the request fails or is interrupted before it completes, should we send a cancellation request?
         """
-        self.server = server
-        self.method = method
-        self.cancel = cancel
-
+        super().__init__(
+            server=server,
+            endpoint=endpoint,
+            params=params,
+            files=files,
+            jsn=jsn,
+            method=method,
+        )
         self.url = f'http://{server.host}:{server.port}/async{endpoint}'
-        self.request_args = {}
-        if params is not None:
-            self.request_args['params'] = params
-        if files is not None:
-            self.request_args['files'] = files
-        if json is not None:
-            self.request_args['json'] = jsn
-
-        self.status = None  # type: Optional[str]
+        self.cancel = cancel
+        
         self.uid = None  # type: Optional[str]
+        self.status = None  # type: Optional[str]
         self.data = None  # type: Optional[Dict]
-        self.result = None  # type: Optional[Dict]  # ...probably. It might be different, based on the wrapper
+        self.result = None  # type: Optional[Dict]
         self.error = None  # type: Optional[Dict]
 
     def refresh(self):
@@ -85,20 +142,9 @@ class AsyncRequest(object):
         return self.result
 
     def send(self):
-        try:
-            if self.method == 'post':
-                r = requests.post(self.url, **self.request_args, timeout=10)
-            elif self.method == 'get':
-                r = requests.get(self.url, **self.request_args, timeout=10)
-            else:
-                r = requests.request(self.method, self.url, **self.request_args, timeout=10)
-        except requests.exceptions.ConnectTimeout:
-            raise errors.ConnectionError('Connection timed out')
-        except requests.exceptions.ConnectionError:
-            raise errors.ConnectionRefused('Cannot connect to server')
-
-        resp = self._parse_response(r)
+        resp = super().send()
         self._update(resp)
+        return resp
 
     def __enter__(self):
         self.send()
@@ -118,13 +164,3 @@ class AsyncRequest(object):
     @property
     def done(self):
         return self.status in {'Error', 'Done'}
-
-    @staticmethod
-    def _parse_response(response):
-        try:
-            resp = json.loads(response.content)
-        except json.JSONDecodeError:
-            raise errors.ServerError('Malformed server response', data={'response': response.content.decode('utf-8')})
-        if response.status_code != 200:
-            raise errors.ServerError('Server rejected request', data=resp)
-        return resp

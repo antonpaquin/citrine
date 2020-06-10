@@ -33,7 +33,7 @@ def command_run(args):
         in_params = cli_io.parse_cli_inputs(args['in'] or [])
     out_params = cli_io.parse_cli_outputs(args['out'] or [])
 
-    client = api.HivemindClient(server, port)
+    client = api.HivemindClient(server, port, async_=True)
     results = client.run(target=target, params=in_params)
 
     if not out_params:
@@ -58,7 +58,7 @@ def command_run_raw(args):
         in_params = cli_io.parse_cli_inputs(args['in'] or [])
     out_params = cli_io.parse_cli_outputs(args['out'] or [])
 
-    client = api.HivemindClient(server, port)
+    client = api.HivemindClient(server, port, async_=True)
     results = client._run(target_package=target_package, target_model=target_model, params=in_params)
 
     if not out_params:

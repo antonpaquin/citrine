@@ -46,7 +46,7 @@ def install_spec_args(args) -> List[Dict]:
     
 def install_or_fetch(args, command):
     res = []
-    client = api.PackageClient(server, port)
+    client = api.PackageClient(server, port, async_=True)
     specs = install_spec_args(args)
 
     for spec in specs:
@@ -120,4 +120,11 @@ def command_deactivate(args):
 def command_list(args):
     client = api.PackageClient(server, port)
     result = client.list()
+    print(json.dumps(result, indent=4))
+
+
+@subcommand_handler('search')
+def command_list(args):
+    client = api.PackageClient(server, port)
+    result = client.search(query=args['query'])
     print(json.dumps(result, indent=4))

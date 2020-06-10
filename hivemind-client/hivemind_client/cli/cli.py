@@ -33,6 +33,9 @@ def package_subparser(parser: argparse.ArgumentParser):
     remove.add_argument('--version')
 
     list_ = command.add_parser('list')
+    
+    search = command.add_parser('search')
+    search.add_argument('query')
 
 
 def cli_args(parser: argparse.ArgumentParser):

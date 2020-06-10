@@ -119,7 +119,11 @@ class PackagesModel(QtCore.QObject):
         def install_package_thread():
             self.in_progress_packages.append(in_progress)
             self.sig_changed_packages.emit()
-            client = hivemind_client.api.PackageClient(get_config('daemon.server'), get_config('daemon.port'))
+            client = hivemind_client.api.PackageClient(
+                host=get_config('daemon.server'),
+                port=get_config('daemon.port'),
+                async_=True,
+            )
             try:
                 client.install(specfile=fname, progress_callback=in_progress.update)
             except hivemind_client.errors.HivemindClientError as e:
