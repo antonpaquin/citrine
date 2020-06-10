@@ -158,6 +158,20 @@ async def package_list(request: web.Request) -> AsyncFuture:
     return run_async(package.db.list_packages, request_info=make_request_info('package.list'))
 
 
+async def package_search(request: web.Request) -> AsyncFuture:
+    logger.debug('Handling request for method package.search')
+    validator = cerberus.Validator(schema={
+        'query': {
+            'type': 'string',
+            'required': True,
+        },
+    })
+    params = await expect_json(request, validator)
+    return run_async(package.repo.search_package, kwargs={
+        'query': params['query'],
+    }, request_info=make_request_info('package.list'))
+
+
 async def heartbeat(request: web.Request) -> web.Response:
     logger.debug('Handling request for method heartbeat')
     return web.Response(body=json.dumps({
@@ -218,6 +232,7 @@ def build_app():
         (web.post, '/package/activate', package_activate),
         (web.post, '/package/deactivate', package_deactivate),
         (web.post, '/package/remove', package_remove),
+        (web.post, '/package/search', package_search),
         (web.get, '/package/list', package_list),
     ]
     

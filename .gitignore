@@ -3,6 +3,7 @@
 .cache/*
 .config/*
 .gitconfig
+.git-credentials
 .gem/
 .idea
 .jira.d

@@ -16,13 +16,25 @@ def _pull_index():
     for row in data:
         name, pkg_url, pkg_hash = row.split('|')
         _package_index[name] = (pkg_url, pkg_hash)
-
-
-def index_lookup(name: str) -> Tuple[str, str]:
+        
+        
+def _get_index():
     global _package_index
     if _package_index is None:
         _package_index = {}
         _pull_index()
-    if name not in _package_index:
+    return _package_index
+
+        
+def search_package(query: str):
+    package_index = _get_index()
+    return {
+        'packages': [name for name in package_index.keys() if query.lower() in name.lower()]
+    }
+
+
+def index_lookup(name: str) -> Tuple[str, str]:
+    package_index = _get_index()
+    if name not in package_index:
         raise errors.PackageInstallError(f'Could not find package {name}')
-    return _package_index[name]
+    return package_index[name]
