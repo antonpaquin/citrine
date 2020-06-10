@@ -8,7 +8,8 @@ set -ex
 
 cp package/pyinstaller_linux.spec hivemind-daemon.spec
 pyinstaller hivemind-daemon.spec
-mv dist/hivemind-daemon ../artifacts/hivemind-daemon
+rm -r ../artifacts/hivemind-daemon-linux || true
+mv dist/hivemind-daemon ../artifacts/hivemind-daemon-linux
 
 rmdir dist
 rm -rf build/

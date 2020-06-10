@@ -15,6 +15,7 @@ SRC_FILES=($(find . \( \
 	-o -path "./docker" \
 	-o -path "./env" \
 	-o -path "./artifacts" \
+	-o -path "./res" \
 	-o -path "*.git" \
 	-o -path "*.egg-info" \
 	-o -path "*.idea" \

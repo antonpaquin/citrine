@@ -4,14 +4,19 @@ block_cipher = None
 
 
 a = Analysis(
-    ['hivemind_client/__main__.py'],
-    pathex=['/build/hivemind-client'],
+    ['hivemind_ui/__main__.py'],
+    pathex=['/build/hivemind-ui'],
     binaries=[],
-    datas=[],
-    hiddenimports=[],
+    datas=[
+        ('hivemind_ui/res', 'hivemind_ui/res'),
+        ('hivemind_ui/js_bridge/client.js', 'hivemind_ui/js_bridge/'),
+    ],
+    hiddenimports=[
+        'pkg_resources.py2_warn',
+    ],
     hookspath=[],
     runtime_hooks=[],
-    excludes=[],
+    excludes=['tkinter'],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -19,8 +24,7 @@ a = Analysis(
 )
 
 pyz = PYZ(
-    a.pure,
-    a.zipped_data,
+    a.pure, a.zipped_data,
     cipher=block_cipher,
 )
 
@@ -29,7 +33,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='hivemind',
+    name='hivemind-ui',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -45,5 +49,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='hivemind-client',
+    name='hivemind-ui',
 )

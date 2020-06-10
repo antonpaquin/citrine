@@ -1,0 +1,17 @@
+#! /bin/bash
+
+SRC_DIR="$(dirname "${BASH_SOURCE[0]}")"
+cd "$SRC_DIR"
+cd ..
+
+set -ex
+
+SIZES=()
+SIZES+=(1024 512 256 128 64 32 16)  # MacOS Iconset
+SIZES+=(1024)  # Windows
+
+for sz in ${SIZES[@]}; do
+	if [[ ! -f "res/logo_${sz}.png" ]]; then
+		inkscape -w $sz -h $sz res/logo.svg --export-filename res/logo_${sz}.png
+	fi
+done

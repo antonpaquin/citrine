@@ -13,7 +13,7 @@ a = Analysis(
     ],
     hiddenimports=[
         'pkg_resources.py2_warn',
-        'hivemind_client'
+        'hivemind_client',
     ],
     hookspath=[],
     runtime_hooks=[],

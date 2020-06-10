@@ -14,9 +14,13 @@ if _platform == 'Linux':
 elif _platform == 'Windows':
     storage_path = os.path.join(os.getenv('APPDATA'), 'hivemind', 'ui')
     config_path = os.path.join(os.getenv('APPDATA'), 'hivemind', 'ui')
+elif _platform == 'Darwin':
+    storage_path = os.path.join(os.getenv('HOME'), '.cache', 'hivemind', 'ui')
+    config_path = os.path.join(os.getenv('HOME'), '.config', 'hivemind-ui')
 else:
     warnings.warn(f'Unknown platform {_platform}; defaulting storage to working directory')
     storage_path = os.getcwd()
+    config_path = os.getcwd()
 
 
 default_config = {

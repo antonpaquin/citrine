@@ -12,5 +12,7 @@ services:
             - "./hivemind-ui:/build/hivemind-ui"
         working_dir: "/build"
         entrypoint: ["/build/docker/build-all.sh"]
+        dns:
+            - '8.8.8.8'
 
 

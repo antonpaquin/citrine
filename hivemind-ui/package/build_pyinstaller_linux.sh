@@ -6,10 +6,11 @@ cd ..
 
 set -ex
 
-cp package/pyinstaller_linux.spec hivemind-cli.spec
-pyinstaller hivemind-cli.spec
-mv dist/hivemind-ui ../artifacts/hivemind-ui
+cp package/pyinstaller_linux.spec hivemind-ui.spec
+pyinstaller hivemind-ui.spec
+rm -r ../artifacts/hivemind-ui-linux || true
+mv dist/hivemind-ui ../artifacts/hivemind-ui-linux
 
 rmdir dist
 rm -rf build/
-rm hivemind-cli.spec
+rm hivemind-ui.spec

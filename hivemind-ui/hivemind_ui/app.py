@@ -1,3 +1,4 @@
+import os
 from typing import *
 import sys
 
@@ -46,7 +47,7 @@ def display_error(message: Union[str, hivemind_client.errors.HivemindClientError
 
 def main():
     QtWebEngine.initialize()
-    app = QApplication([])
+    app = QApplication(sys.argv)
     app.setStyleSheet(get_stylesheet())
     init()
     # If you don't init the main window and exec the app in the same context, the whole thing freezes / refuses to start

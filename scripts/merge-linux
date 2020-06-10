@@ -1,0 +1,15 @@
+#! /bin/bash
+
+SRC_DIR="$(dirname "${BASH_SOURCE[0]}")"
+cd "$SRC_DIR"
+cd ..
+
+set -ex
+
+cd artifacts
+
+rm -rf hivemind-linux || true
+mkdir hivemind-linux
+rsync -r hivemind-daemon-linux/ hivemind-linux/
+rsync -r hivemind-client-linux/ hivemind-linux/
+rsync -r hivemind-ui-linux/ hivemind-linux/

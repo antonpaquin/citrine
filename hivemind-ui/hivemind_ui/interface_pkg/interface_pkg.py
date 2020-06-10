@@ -148,7 +148,6 @@ def list_interfaces() -> List[Interface]:
     res = []
     for fname in os.listdir(interface_dir):
         fpath = os.path.join(interface_dir, fname)
-        print(f'List interface: fpath is {fpath}')
         res.append(Interface.load(fpath))
     return res
 

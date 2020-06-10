@@ -1,3 +1,4 @@
+import platform
 import subprocess
 
 from PySide2.QtCore import Qt
@@ -56,7 +57,15 @@ class DaemonConnection(QtCore.QObject):
             self.sig_connect_error.emit(f'Failed: {e.name}')
 
     def spawn_daemon(self):
-        subprocess.Popen(['hivemind-daemon'])
+        _platform = platform.system()
+        if _platform == 'Linux':
+            subprocess.Popen(['hivemind-daemon'])
+        elif _platform == 'Windows':
+            subprocess.Popen(['./hivemind-daemon'])
+        elif _platform == 'Darwin':
+            subprocess.Popen(['./hivemind-daemon'])
+        else:
+            subprocess.Popen(['hivemind-daemon'])
 
 
 @register_xml('ServerStatus')

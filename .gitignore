@@ -5,6 +5,7 @@
 .gitconfig
 .gem/
 .idea
+.jira.d
 .lesshst
 .local/*
 .pki/
@@ -20,6 +21,7 @@ VirtualBox VMs/
 vm/*
 
 artifacts/
+res/*.png
 *.egg-info
 hivemind.log
 __pycache__
@@ -27,3 +29,5 @@ __pycache__
 hivemind-daemon/onnx
 hivemind-repo
 qtcreator
+scripts/gopass
+scripts/jira

@@ -1,0 +1,3 @@
+#! /bin/bash
+
+sshpass -p 'build' ssh -p 3022 build@localhost

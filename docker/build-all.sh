@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -ex
+
 apt update
 apt install -y python3.7 python3.7-dev python3.7-venv python3-pip
 

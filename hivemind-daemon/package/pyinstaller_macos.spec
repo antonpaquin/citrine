@@ -4,14 +4,16 @@ block_cipher = None
 
 
 a = Analysis(
-    ['hivemind_client/__main__.py'],
-    pathex=['/build/hivemind-client'],
+    ['hivemind_daemon/__main__.py'],
+    pathex=['/build/hivemind-daemon'],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    hiddenimports=[
+        'pkg_resources.py2_warn',
+    ],
     hookspath=[],
     runtime_hooks=[],
-    excludes=[],
+    excludes=['tkinter'],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -29,7 +31,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='hivemind',
+    name='hivemind-daemon',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -45,5 +47,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='hivemind-client',
+    name='hivemind-daemon',
 )
