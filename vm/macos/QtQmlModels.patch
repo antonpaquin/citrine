@@ -1,0 +1,13 @@
+diff --git a/hook-PySide2.QtWebEngineWidgets.py.2 b/hook-PySide2.QtWebEngineWidgets.py
+index ec14647..eeeae6a 100644
+--- a/hook-PySide2.QtWebEngineWidgets.py.2
++++ b/hook-PySide2.QtWebEngineWidgets.py
+@@ -49,7 +49,7 @@ if pyside2_library_info.version:
+     if compat.is_darwin:
+         # This is based on the layout of the Mac wheel from PyPi.
+         data_path = pyside2_locations['DataPath']
+-        libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml',
++        libraries = ['QtCore', 'QtWebEngineCore', 'QtQuick', 'QtQml', 'QtQmlModels',
+                      'QtNetwork', 'QtGui', 'QtWebChannel',
+                      'QtPositioning']
+         for i in libraries:
