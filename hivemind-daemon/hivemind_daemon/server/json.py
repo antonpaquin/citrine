@@ -4,6 +4,8 @@ from typing import Any, Callable
 
 import numpy as np
 
+from hivemind_daemon.util import encode_tensor
+
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,7 @@ class HivemindEncoder(JSONEncoder):
         HivemindEncoder.encoder_registry.append((cls, fn))
 
 
-HivemindEncoder.register_encoder(np.ndarray, lambda x: x.tolist())
+HivemindEncoder.register_encoder(np.ndarray, encode_tensor)
 HivemindEncoder.register_encoder(np.float32, float)
 HivemindEncoder.register_encoder(np.uint32, int)
 HivemindEncoder.register_encoder(np.int32, int)

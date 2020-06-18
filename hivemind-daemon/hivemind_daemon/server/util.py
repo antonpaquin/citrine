@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import traceback
 from typing import *
 
 from aiohttp import web
@@ -36,7 +37,7 @@ def error_handler(f):
                 status=e.status_code,
             )
         except Exception as e:
-            logger.error('Request failed with unexpected error', {'error': str(e), 'args': e.args})
+            logger.error('Request failed with unexpected error', errors.serialize_unknown_exception(e))
             raise
     return wrapped
 

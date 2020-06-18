@@ -63,7 +63,7 @@ def remove_package(name: str, version: Optional[str]):
     else:
         db_package = DBPackage.from_name_latest(name)
 
-    core.clear_endpoints(db_package.rowid)
+    core.clear_functions(db_package.rowid)
     storage.package.remove(db_package.install_path)
 
     for model in DBModel.all_from_package(db_package.rowid):

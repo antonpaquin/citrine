@@ -7,6 +7,7 @@ from PIL import Image
 
 import hivemind_client.errors as errors
 import hivemind_client.api as api
+from hivemind_client.util import encode_tensor
 
 
 def parse_kv(kv_args: List[str]) -> List[Tuple[str, str]]:
@@ -72,7 +73,7 @@ def _parse_value(val: str):
         try:
             load_arr = np.load(fname)
             # Do I have to worry about turning the ndarray into a python array?
-            return load_arr['arr_0'].tolist()  # default numpy save name
+            return encode_tensor(load_arr['arr_0'])  # default numpy save name
         except Exception as e:
             raise errors.OptionParseError(f'Could not parse numpy file {fname}')
 
@@ -80,7 +81,7 @@ def _parse_value(val: str):
         fname = val[len('@img:'):]
         try:
             img = Image.open(fname)
-            return np.asarray(img).tolist()
+            return encode_tensor(np.asarray(img))
         except Exception as e:
             raise errors.OptionParseError(f'Could not parse image file {fname}')
 
@@ -114,11 +115,11 @@ def run_output(results, output_kv):
         except Exception:
             raise errors.OptionParseError(f'Did not find {key_str} in the results')
         
-        if isinstance(val, dict) and list(val.keys()) == ['fileresult']:
+        if isinstance(val, dict) and list(val.keys()) == ['file_ref']:
             # TODO undo hardcoding
             # FIX THIS
             client = api.HivemindClient('127.0.0.1', 5402)
-            val = client.result(val['fileresult'])
+            val = client.result(val['file_ref'])
             
         if command == 'print':
             if isinstance(val, dict) or isinstance(val, list):

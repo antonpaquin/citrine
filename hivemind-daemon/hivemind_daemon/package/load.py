@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 
 import cerberus
 
-from hivemind_daemon import storage, errors, package
+from hivemind_daemon import storage, errors, package, core
 from hivemind_daemon.package import db
 
 
@@ -54,7 +54,7 @@ package_validator = {
 }
 
 
-load_context = {'package_id': None}  # type: Dict[str, Optional[Any]]
+load_context = {'package': None}  # type: Dict[str, Optional[Any]]
 load_context_lock = threading.Lock()
 
 
@@ -69,10 +69,10 @@ def load_package_meta(name):
     return v.document
 
 
-def get_loading_package_id():
+def get_loading_package() -> Optional[db.DBPackage]:
     if not load_context_lock.locked():
         return None
-    return load_context['package_id']
+    return load_context['package']
 
 
 def init_packages():
@@ -101,6 +101,7 @@ def deactivate_package(name: str, version: Optional[str]):
     else:
         db_package = db.DBPackage.from_name_latest(name)
     set_package_active(db_package, False)
+    core.clear_functions(db_package.rowid)
     return {'status': 'OK'}
 
 
@@ -114,15 +115,15 @@ def set_package_active(db_package: db.DBPackage, active: bool):
 
 
 class PackageContext(object):
-    def __init__(self, package_id: int):
-        self.package_id = package_id
+    def __init__(self, pkg: db.DBPackage):
+        self.package = pkg
 
     def __enter__(self):
         load_context_lock.acquire()
-        load_context['package_id'] = self.package_id
+        load_context['package'] = self.package
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        load_context['package_id'] = None
+        load_context['package'] = None
         load_context_lock.release()
 
 
@@ -140,7 +141,7 @@ def load_package(db_package: db.DBPackage):
     exec_dir = os.path.join(storage.package_path(), db_package.install_path)
     try:
         os.chdir(exec_dir)
-        with PackageContext(package_id=db_package.rowid):
+        with PackageContext(db_package):
             logger.info('BEGIN loading module', log_ctx)
             spec.loader.exec_module(mod)
             logger.info('END loading module', log_ctx)

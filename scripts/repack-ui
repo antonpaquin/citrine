@@ -1,0 +1,16 @@
+#! /bin/bash
+
+SRC_DIR="$(dirname "${BASH_SOURCE[0]}")"
+cd "$SRC_DIR"
+cd ..
+
+set -ex
+
+CACHE_DIR="$HOME/.cache/hivemind/ui/interfaces"
+SOURCE_DIR="$HOME/hivemind-repo/ui/interfaces"
+
+for f in "$SOURCE_DIR"/*; do
+    NAME="${f##*/}"
+    rm -r "$CACHE_DIR/$NAME" || true
+    cp -r "$SOURCE_DIR/$NAME" "$CACHE_DIR/$NAME"
+done

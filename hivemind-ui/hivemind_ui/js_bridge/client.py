@@ -9,7 +9,6 @@ from PySide2.QtWebEngineWidgets import QWebEngineScript
 import hivemind_client
 
 from hivemind_ui.config import get_config
-from hivemind_ui.util import threaded
 
 
 cached_js = None

@@ -103,7 +103,6 @@ PackagePage PackagePageHeader {
     margin: 10px;
     padding: 10px;
     background-color: #222;
-    border: 2px dashed #aaa;
 }
 
 PackagePage QProgressBar {

@@ -1,0 +1,13 @@
+I want to have:
+
+- libhivemind == basically the stuff in "core" and a little in "package" -- load a zipfile, expose a pythonic API
+    for the people who have some project that don't want to use a web server
+
+- cluster stuff probably goes in daemon
+
+- hivemind-training: linked with hivemind-daemon, but separates out any actual training library
+    daemon manages
+        - datasets
+        - parameter server (maybe?)
+        - job control
+    training manages torch crap

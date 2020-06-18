@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='hivemind-daemon',
-    version='0.1.0',
+    version='0.2.0',
     python_requires='>3.7.0',
     description='Last mile neural inference',
     packages=find_packages(),

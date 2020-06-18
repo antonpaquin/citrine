@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def main():
     config.init_config()
     logs.init_logging()
-    logger.info('Hivemind v0.1.0')
+    logger.info('Hivemind v0.2.0')
     storage.init_storage()
     package.db.init_db()
     package.load.init_packages()

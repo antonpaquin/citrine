@@ -115,7 +115,7 @@ def list_packages() -> Dict:
     packages = []
     for pkg in DBPackage.get_all():
         entry = pkg.to_dict()
-        entry['endpoints'] = core.list_active_endpoint_names(pkg.rowid)
+        entry['functions'] = core.list_active_function_names(pkg.rowid)
         packages.append(entry)
     return {'packages': packages}
 

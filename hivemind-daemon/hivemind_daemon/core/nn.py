@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Dict
 
 import numpy as np
@@ -10,6 +11,41 @@ from hivemind_daemon.util import truncate_str
 
 logger = logging.getLogger(__name__)
 
+
+class OnnxSession:
+    sessions: Dict[str, 'OnnxSession'] = {}
+    ttl = 30
+
+    def __init__(self, model_file: str):
+        self.model_file = model_file
+        self.sess: onnxruntime.InferenceSession = None
+        self.expire_timer = None
+        self.reset_expiration()
+
+    @staticmethod
+    def get_session(model_file: str):
+        if model_file not in OnnxSession.sessions:
+            sess = OnnxSession.sessions[model_file]
+            sess.reset_expiration()
+        else:
+            sess = OnnxSession(model_file)
+            OnnxSession.sessions[model_file] = sess
+        return sess
+        
+    def reset_expiration(self):
+        self.expire_timer = time.time()
+
+    @staticmethod
+    def cleanup():
+        t_now = time.time()
+        for k, sess in OnnxSession.sessions.items():
+            if (t_now - sess.expire_timer) > OnnxSession.ttl:
+                OnnxSession.sessions.pop(k)
+                
+    def test_expire(self):
+        if (self.expire_timer - time.time()) >= OnnxSession.ttl:
+            OnnxSession.sessions.pop(self.model_file)
+        
 
 def _get_session(model_file: str) -> onnxruntime.InferenceSession:
     session = onnxruntime.InferenceSession(model_file)

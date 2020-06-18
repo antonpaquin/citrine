@@ -1,4 +1,4 @@
-<PackageProgress>
+<ProgressPackage>
     <VBox stretch="2">
         <QWidget stretch="1"/>
         <QLabel name="name_label"/>
@@ -9,4 +9,4 @@
         <QProgressBar name="progress_bar" setOrientation="@Horizontal" setAlignment="@AlignCenter" setMinimum="0" setMaximum="1"/>
         <QWidget stretch="1"/>
     </VBox>
-</PackageProgress>
+</ProgressPackage>

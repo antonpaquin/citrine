@@ -23,10 +23,6 @@ class ConfigTableRow:
         for col, item in enumerate(self.items):
             li.setItem(row, col, item)
             
-    def edit_val(self, ev: QtCore.QEvent):
-        # TODO: what is this for?
-        print('Anton: edit val!')
-
 
 @register_xml('ConfigPage')
 class ConfigPage(VBox):

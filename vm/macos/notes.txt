@@ -1,0 +1,47 @@
+macos_put_extradata.sh
+	bootloops until I run this
+	configured for the name "hivemind_build_macos"
+	create the machine, try to run it, fail, shutdown, run script, boot
+	
+no input on boot
+	Apparently requires extension pack?
+	In this dir, or https://www.virtualbox.org/wiki/Download_Old_Builds_6_1
+	sudo vboxmanage extpack install <fpath>
+	Not sure if this actually did anything, but it works. Try without on next virtualbox install
+
+Installer can't be used to install macos
+	Disconnect box from internet
+		settings -> network -> enable network adapter
+	Start machine
+	Boot, language, utilities -> terminal
+	date 030300002019
+	quit, continue
+
+No drives listed
+	run disk utility first, format the vdi
+	Mac calls the format operation "erase"
+
+Installation takes forever
+	yeah
+	it's not stuck, just slow
+	let it go overnight
+	Crashes at the end but apparently it's OK
+
+SSH
+	settings
+	-> network
+	-> Advanced
+	-> Port forwarding
+	Name: ssh-macos-build
+	Protocol: TCP
+	Host IP: 127.0.0.1
+	Host Port: 4022
+	Guest IP: $(ifconfig en0 inet) --> look for an IP
+	Guest Port: 22
+
+Python
+	Apparently the .pkg doesn't work so good with pyinstaller
+	curl https://pyenv.run | bash
+	echo the thing to bashrc and source it
+	env PYTHON_CONFIGURE_OPTS="--enable-framework" pyenv install 3.7.7
+	might have to install the xcode thing first. Dialog pops up in gui

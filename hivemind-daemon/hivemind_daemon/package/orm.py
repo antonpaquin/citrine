@@ -58,12 +58,13 @@ class DBPackage:
             raise errors.DatabaseMissingEntry(f'Package {name}::{version} not found')
 
     @staticmethod
-    def from_name_latest(name: str):
+    def from_name_latest(name: str, only_active: bool = False):
         with db.Cursor() as cur:
             cur.execute(
                 'SELECT rowid, name, active, version, humanname, install_path'
                 ' FROM package'
-                ' WHERE name = ?',
+                ' WHERE name = ?'
+                + (' AND active = 1' if only_active else ''),
                 (name,)
             )
             # semver doesn't order nicely in sqlite, so we'll just grab everything and sort in python

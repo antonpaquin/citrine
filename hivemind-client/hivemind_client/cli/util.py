@@ -76,9 +76,3 @@ def make_progress_bar(label: str):
             bar.finish()
 
     return fill_bar, finish_bar
-
-
-
-    
-
-

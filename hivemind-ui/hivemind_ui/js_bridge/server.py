@@ -23,7 +23,13 @@ claims = AsyncTunnel(server_event_loop)
 
 def init_server():
     def server_thread():
-        start_server = websockets.serve(serve, "localhost", get_config('js_bridge.socket.port'), loop=server_event_loop)
+        start_server = websockets.serve(
+            ws_handler=serve, 
+            host="localhost", 
+            port=get_config('js_bridge.socket.port'), 
+            loop=server_event_loop,
+            max_size=2**30,
+        )
         server_event_loop.run_until_complete(start_server)
         server_event_loop.run_forever()
         

@@ -23,6 +23,7 @@ vm/*
 
 artifacts/
 res/*.png
+res/*.ico
 *.egg-info
 hivemind.log
 __pycache__

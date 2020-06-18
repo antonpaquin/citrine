@@ -48,7 +48,7 @@ class InvalidInput(HivemindException):
     def __init__(self, msg, status_code=400, data=None):
         super(InvalidInput, self).__init__(msg, status_code=status_code, data=data)
 
-class MissingEndpoint(InvalidInput): name = 'Missing Endpoint'
+class MissingFunction(InvalidInput): name = 'Missing Function'
 class InvalidTensor(InvalidInput): name = 'Invalid Tensor'
 class NoSuchJob(InvalidInput): name = 'No such job'
 class ValidationError(InvalidInput): name = 'Validation Error'

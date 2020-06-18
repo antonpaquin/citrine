@@ -1,0 +1,12 @@
+<SearchPackage>
+    <VBox stretch="2">
+        <QWidget stretch="1"/>
+        <QLabel name="name_label"/>
+        <QWidget stretch="1"/>
+    </VBox>
+    <VBox stretch="1">
+        <QWidget stretch="1"/>
+        <QPushButton name="install_btn" text="install"/>
+        <QWidget stretch="1"/>
+    </VBox>
+</SearchPackage>

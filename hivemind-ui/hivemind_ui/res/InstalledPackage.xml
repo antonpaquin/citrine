@@ -14,7 +14,7 @@
         </HBox>
         <HBox>
             <QWidget stretch="1"/>
-            <QPushButton name="remove_btn" arg0="uninstall"/>
+            <QPushButton name="remove_btn" text="uninstall"/>
         </HBox>
         <QWidget stretch="1"/>
     </VBox>

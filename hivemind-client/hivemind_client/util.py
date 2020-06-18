@@ -1,27 +1,18 @@
-from typing import Dict
+import base64
+from typing import *
 
-from progress.bar import IncrementalBar
-
-
-def make_progress_bar(label: str):
-    bar = None
-    bar_progress = 0
-
-    def fill_bar(data: Dict) -> None:
-        nonlocal bar, bar_progress
-        if not 'download-progress' in data and 'download-size' in data:
-            return
-        bar = bar or IncrementalBar(label, max=100, suffix='%(percent)d%%')
-        
-        percent = int(100 * data['download-progress'] / data['download-size'])
-        while bar_progress < percent:
-            bar.next()
-            bar_progress += 1
-            
-    def finish_bar() -> None:
-        if bar:
-            bar.finish()
-
-    return fill_bar, finish_bar
+import numpy as np
 
 
+def encode_tensor(arr: np.ndarray) -> Dict:
+    data = base64.b64encode(arr)
+    return {
+        'dtype': str(arr.dtype),
+        'data': data.decode('utf-8'),
+        'shape': list(arr.shape),
+    }
+
+
+def decode_tensor(t: Dict) -> np.ndarray:
+    arr = np.frombuffer(base64.b64decode(t['data']), t['dtype'])
+    return arr.reshape(t['shape'])

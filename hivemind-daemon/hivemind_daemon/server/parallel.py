@@ -2,6 +2,7 @@ import asyncio
 import logging
 from queue import Queue
 import threading
+import time
 from typing import *
 from uuid import uuid4
 
@@ -14,7 +15,8 @@ from hivemind_daemon.server.json import HivemindEncoder
 logger = logging.getLogger(__name__)
 
 primary_job_queue = Queue(maxsize=1000)
-job_cache = {}
+job_cache_hold_time = 60
+job_cache: Dict[str, 'AsyncFuture'] = {}
 
 thread_local = threading.local()
 thread_local.active_job = None
@@ -52,6 +54,7 @@ class AsyncFuture(object):
         self.args = args or ()
         self.kwargs = kwargs or {}
         self.request_info = request_info
+        self.cache_expire = None
         
         self.result_val = None
         self.result_exc = None
@@ -160,8 +163,22 @@ def worker_thread(worker_id: int):
         except errors.JobInterrupted:
             pass
         package.db.end_connection(commit=(job.state == FutureState.DONE))
+        job.cache_expire = time.time() + job_cache_hold_time
         logger.debug('Worker finished async job')
         thread_local.active_job = None
+        
+        
+def janitor_thread():
+    logger.info('Janitor initialized')
+    while True:
+        time.sleep(job_cache_hold_time)
+        t = time.time()
+        purge_jobs = []
+        for job_id, cached_job in job_cache.items():
+            if cached_job.cache_expire < t:
+                purge_jobs.append(job_id)
+        for job_id in purge_jobs:
+            job_cache.pop(job_id)
 
 
 def job_put_extra(key: str, value: any):
@@ -180,3 +197,8 @@ def init_workers(n_workers: int):
             daemon=True,
         ))
     [t.start() for t in threadpool]
+    threading.Thread(
+        name='janitor',
+        target=janitor_thread,
+        daemon=True,
+    ).start()

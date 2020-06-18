@@ -33,7 +33,7 @@ class FileHandle(object):
 
     def to_dict(self):
         return {
-            'fileresult': self.fname
+            'file_ref': self.fname
         }
 
 

@@ -1,0 +1,55 @@
+VM requires some setup:
+
+- Install windows
+	Click through setup
+	user "build" / pass "build"
+
+- Set up SSH
+	win
+	-> manage optional features
+	-> add a feature
+	-> openssh
+	(There might be more to start it, don't remember entirely)
+
+- Virtualbox port forwarding
+	settings
+	-> network
+	-> Advanced
+	-> Port forwarding
+	Name: ssh-windows-build
+	Protocol: TCP
+	Host IP: 127.0.0.1
+	Host Port: 3022
+	Guest IP: $(in powershell, "ipconfig" --> IPv4 Address)
+	Guest Port: 22
+
+- Install python3.7 
+	SCP the binary (in this directory) (https://www.python.org/downloads/windows/)
+	gui navigate C:\Users\build and click it
+
+- vc_redist.x64.exe
+    may contain some DLLs that are needed somewhere?
+    try it without next time I'm setting up windows
+
+- Run python
+	Whatever shell you enter with the default SSH is bad.
+	Run "powershell" and then things start to work.
+
+- Windows SDK
+	Required for making MSIX package
+	    Maybe not required if using wix? see below
+	    MSIX requires code signing, bleagh
+	SCP the binary (in this directory) (https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk/)
+	gui navigate C:\Users\build and click it
+	I want components:
+		- MSI tools
+		- SDK for UWP managed apps
+	This... downloads a downloader? Which I then ran again and it downloaded a bunch of installers
+		C:\Users\build\Downloads\Windows Kits\10\WindowsSDK\Installers\*.msi
+	Which I then ran one by one until the proper files exist
+		C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x86\makeappx.exe
+	Then I ran the rest of them because it was angry about side-by-side configuration
+
+- Wix
+    Binaries from https://github.com/wixtoolset/wix3/releases/tag/wix3112rtm
+    unzip to C:\users\build\wix

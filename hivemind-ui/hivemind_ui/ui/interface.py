@@ -236,6 +236,10 @@ class InterfacePage(HBox):
         super().__init__()
         os.putenv('QTWEBENGINE_REMOTE_DEBUGGING', str(config.get_config('interface.inspector_port')))
         self.load_xml('InterfacePage.xml')
+        
+        web_settings = self.display.settings().globalSettings()
+        web_settings.setAttribute(web_settings.LocalContentCanAccessRemoteUrls, True)
+        web_settings.setAttribute(web_settings.AllowRunningInsecureContent, True)
 
         self.interface_model = InterfaceSelectorModel.get_instance()
         self.interface_model.interfaces_updated.connect(self.populate, type=Qt.QueuedConnection)

@@ -22,6 +22,8 @@ def command_status(args):
 @subcommand_handler('run')
 def command_run(args):
     target = args['target']
+    if '/' not in target:
+        raise errors.OptionParseError('"target" should look like "package/function_name"')
     if args['in'] and args['in_json']:
         raise errors.OptionParseError('Cannot combine json input with -in')
     if args['in_json']:

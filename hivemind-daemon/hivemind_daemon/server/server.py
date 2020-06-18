@@ -7,8 +7,7 @@ from aiohttp import web
 import cerberus
 import numpy as np
 
-import hivemind_daemon
-from hivemind_daemon import errors, storage, package
+from hivemind_daemon import errors, storage, package, core
 from hivemind_daemon.server.json import HivemindEncoder
 from hivemind_daemon.server.util import *
 from hivemind_daemon.server.parallel import AsyncFuture, run_async, get_future
@@ -33,8 +32,9 @@ async def run_network(request: web.Request) -> AsyncFuture:
     # the intermediate loader at some point.
     # Already have a method for reading multipart, just need to decide on a function signature
     
-    return run_async(hivemind_daemon.core.call, kwargs={
-        'name': request.match_info['name'], 
+    return run_async(core.call, kwargs={
+        'package_name': request.match_info['package_name'],
+        'function_name': request.match_info['function_name'],
         'inputs': jsn,
     }, request_info=make_request_info('run'))
 
@@ -57,9 +57,9 @@ async def run_network_raw(request: web.Request) -> AsyncFuture:
     # It juts coerces everything to object, which onnxruntime should be able to reject smoothly
     model_args = {str(k): np.asarray(v) for k, v in jsn.items()}
     
-    return run_async(hivemind_daemon.core.call_raw, kwargs={
-        'package_name': request.match_info['packagename'],
-        'model_name': request.match_info['modelname'],
+    return run_async(core.call_raw, kwargs={
+        'package_name': request.match_info['package_name'],
+        'model_name': request.match_info['model_name'],
         'inputs': model_args,
     }, request_info=make_request_info('_run'))
 
@@ -177,7 +177,7 @@ async def heartbeat(request: web.Request) -> web.Response:
     return web.Response(body=json.dumps({
         'status': 'OK',
         'service': 'hivemind-daemon',
-        'version': '0.1.0',
+        'version': '0.2.0',
     }))
 
 
@@ -212,6 +212,15 @@ async def async_cancel(request: web.Request) -> web.Response:
     )
 
 
+async def debug(request: web.Request) -> web.Response:
+    import code
+    code.interact(local={**globals(), **locals()})
+    return web.Response(
+        body=json.dumps({'status': 'OK'}, cls=HivemindEncoder),
+        status=200
+    )
+
+
 def build_app():
     logger.debug('Initializing async server')
     app = web.Application()
@@ -221,11 +230,12 @@ def build_app():
         web.get('/result/{name}', get_result),
         web.get('/async/get/{uid}', async_status),
         web.get('/async/cancel/{uid}', async_cancel),
+        web.get('/debug', debug),
     ])
     
     asynchronizable = [
-        (web.post, '/run/{name}', run_network),
-        (web.post, '/_run/{packagename}/{modelname}', run_network_raw),
+        (web.post, '/run/{package_name}/{function_name}', run_network),
+        (web.post, '/_run/{package_name}/{model_name}', run_network_raw),
 
         (web.post, '/package/fetch', package_fetch),
         (web.post, '/package/install', package_install),

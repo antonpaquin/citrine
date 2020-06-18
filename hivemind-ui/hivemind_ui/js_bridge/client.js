@@ -110,10 +110,109 @@ class HivemindClient {
         this._run_cmd('bridge.get_daemon', {}, callback);
     }
 
-    getFileUrl(fileresult) {
-        let url = "http://" + this.daemon.server + ":" + this.daemon.port + "/result/" + fileresult;
+    getFileUrl(fileRef) {
+        let key = fileRef.file_ref;
+        let url = "http://" + this.daemon.server + ":" + this.daemon.port + "/result/" + key;
         return url;
     }
 }
 
 var hivemindClient = new HivemindClient();
+
+class HivemindUtil {
+    constructor() {
+    }
+
+    encodeImageTensor(imgElem, alpha) {
+        if (alpha === undefined) {
+            alpha = false;
+        }
+        let img_data;
+        if (imgElem.nodeName == 'CANVAS') {
+            let ctx = imgElem.getContext('2d');
+            img_data = ctx.getImageData(0, 0, imgElem.width, imgElem.height);
+        } else if (imgElem.nodeName == 'IMG') {
+            let canvas = document.createElement('canvas');
+            canvas.width = imgElem.naturalWidth;
+            canvas.height = imgElem.naturalHeight;
+            let ctx = canvas.getContext('2d');
+            ctx.drawImage(imgElem, 0, 0);
+            img_data = ctx.getImageData(0, 0, imgElem.naturalWidth, imgElem.naturalHeight);
+        } else {
+            throw "encodeImageTensor input should be an <img> or a <canvas>";
+        }
+        let data = img_data.data;
+        let res = [];
+        let b64map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        for (let ii=0; ii<data.length;) {
+            let c1 = data[ii++];
+            let c2 = data[ii++];
+            let c3 = data[ii++];
+            if (!alpha) {
+                ii++;
+            }
+
+            res.push(b64map[c1>>2]);
+            res.push(b64map[((c1 & 3) << 4) | (c2 >> 4)]);
+            if (isNaN(c2)) {
+                res.push('=');
+            } else {
+                res.push(b64map[((c2 & 15) << 2) | (c3 >> 6)]);
+            }
+            if (isNaN(c3)) {
+                res.push('=');
+            } else {
+                res.push(b64map[(c3 & 63)])
+            }
+        }
+        let shape = [img_data.height, img_data.width];
+        if (alpha) {
+            shape.push(4);
+        } else {
+            shape.push(3);
+        }
+        return {
+            data: res.join(''),
+            shape: shape,
+            dtype: "uint8",
+        }
+    }
+
+    decodeImageTensor(tensor) {
+        if (tensor.dtype !== "uint8") {
+            throw "Image tensor must be uint8"
+        }
+        let alpha = (tensor.shape[2] === 4);
+        let canvas = document.createElement('canvas');
+        canvas.height = tensor.shape[0];
+        canvas.width = tensor.shape[1];
+        let ctx = canvas.getContext('2d');
+        let img_data = ctx.createImageData(tensor.shape[0], tensor.shape[1]);
+        let jj = 0;
+        let b64map = new Map();
+        let b64key = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        for (let ii=0; ii<b64key.length; ii++) {
+            b64map.set(b64key[ii], ii);
+        }
+        for (let ii=0; ii<tensor.data.length; ) {
+            let e1 = b64map.get(tensor.data[ii++]);
+            let e2 = b64map.get(tensor.data[ii++]);
+            let e3 = b64map.get(tensor.data[ii++]);
+            let e4 = b64map.get(tensor.data[ii++]);
+
+            img_data.data[jj++] = (e1 << 2) | (e2 >> 4);
+            if (e3 !== '=') {
+                img_data.data[jj++] = ((e2 & 15) << 4) | (e3 >> 2);
+            }
+            if (e4 !== '=') {
+                img_data.data[jj++] = ((e3 & 3) << 6) | (e4);
+            }
+            if (!alpha) {
+                img_data.data[jj++] = 255;
+            }
+        }
+        return img_data;
+    }
+}
+
+var hivemindUtil = new HivemindUtil();

@@ -8,10 +8,13 @@ set -ex
 
 SIZES=()
 SIZES+=(1024 512 256 128 64 32 16)  # MacOS Iconset
-SIZES+=(1024)  # Windows
+SIZES+=(256)  # Windows
 
 for sz in ${SIZES[@]}; do
 	if [[ ! -f "res/logo_${sz}.png" ]]; then
 		inkscape -w $sz -h $sz res/logo.svg --export-filename res/logo_${sz}.png
 	fi
 done
+
+# Windows icon wants some ridiculous proprietary format (it's a thin wrapper around .png)
+convert res/logo_256.png res/logo_256.ico
