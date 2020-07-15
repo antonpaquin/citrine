@@ -44,5 +44,6 @@ def init_logging():
     root_logger.setLevel(logging.DEBUG)
     root_logger.addHandler(handler)
     
-    aio_logger = logging.getLogger('aiohttp')
-    aio_logger.setLevel(logging.WARNING)
+    for mod in ['aiohttp', 'asyncio']:
+        mod_logger = logging.getLogger(mod)
+        mod_logger.setLevel(logging.WARNING)

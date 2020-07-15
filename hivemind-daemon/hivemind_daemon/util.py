@@ -28,6 +28,8 @@ def truncate_str(obj: Any, maxlength: int) -> str:
 
 
 def encode_tensor(arr: np.ndarray) -> Dict:
+    if not arr.flags.c_contiguous:
+        arr = arr.copy(order='C')
     data = base64.b64encode(arr)
     return {
         'dtype': str(arr.dtype),

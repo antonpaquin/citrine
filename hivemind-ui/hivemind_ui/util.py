@@ -1,6 +1,7 @@
 import os
 import queue
 import threading
+import traceback
 
 threadpool = []
 work_queue = queue.Queue()
@@ -19,6 +20,7 @@ def worker_thread():
             fn(*args)
         except Exception as e:
             print(f'Error in thread: {e}')
+            traceback.print_exc()
 
 
 def threaded(f):

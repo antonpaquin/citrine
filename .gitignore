@@ -17,7 +17,7 @@
 
 activate
 env
-test_env/
+test/
 VirtualBox VMs/
 vm/*
 

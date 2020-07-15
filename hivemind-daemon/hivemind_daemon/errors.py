@@ -6,10 +6,13 @@ from hivemind_daemon.server.json import HivemindEncoder
 
 class HivemindException(Exception):
     name = 'Root Error'
-    
-    def __init__(self, msg, status_code=500, data=None):
+    default_code = 500
+
+    def __init__(self, msg, status_code=None, data=None):
         super(HivemindException, self).__init__(msg)
         self.msg = msg
+        if status_code is None:
+            status_code = self.default_code
         self.status_code = status_code
         self.data = data
         
@@ -31,6 +34,7 @@ class ModelRunError(InternalError): name = 'Model Run Error'
 
 class PackageError(HivemindException): name = 'Package Error'
 class PackageInstallError(PackageError): name = 'Package Install Error'
+class PackageAlreadyExists(PackageInstallError): name = 'Package Already Exists'
 class PackageStorageError(PackageError): name = 'Package Storage Error'
 class RepositoryError(PackageError): name = 'Repository Error'
 
@@ -45,9 +49,7 @@ class DatabaseCollision(DatabaseError): name = 'Database Collision'
 
 class InvalidInput(HivemindException):
     name = 'Invalid Input'
-    def __init__(self, msg, status_code=400, data=None):
-        super(InvalidInput, self).__init__(msg, status_code=status_code, data=data)
-
+    default_code = 400
 class MissingFunction(InvalidInput): name = 'Missing Function'
 class InvalidTensor(InvalidInput): name = 'Invalid Tensor'
 class NoSuchJob(InvalidInput): name = 'No such job'

@@ -1,3 +1,4 @@
+import functools
 from typing import *
 
 import hivemind_client
@@ -118,7 +119,7 @@ class SearchList(QtCore.QObject):
         self.packages = []
         for name in missing_packages:
             pkg = SearchPackage(name)
-            pkg.on_remove = lambda: self.remove(pkg)
+            pkg.on_remove = functools.partial(self.remove, pkg)
             self.packages.append(pkg)
         self.sig_data_changed.emit()
         
@@ -145,7 +146,7 @@ class ProgressList(QtCore.QObject):
     @threaded
     def install_package(self, name: str):
         pkg = ProgressPackage(name)
-        pkg.on_remove = lambda: self.finished(pkg)
+        pkg.on_remove = functools.partial(self.finished, pkg)
         self.packages.append(pkg)
         self.sig_data_changed.emit()
         client = hivemind_client.api.PackageClient(get_config('daemon.server'), get_config('daemon.port'), async_=True)
@@ -193,7 +194,7 @@ class InstalledList(QtCore.QObject):
                 version=package['version'],
                 active=package['active'],
             )
-            model.on_remove = lambda: self.remove(model)
+            model.on_remove = functools.partial(self.remove, model)
             model.sig_removed.connect(self.sig_data_changed.emit, type=Qt.QueuedConnection)
             li.append(model)
 

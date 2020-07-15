@@ -1,0 +1,88 @@
+The movie problem:
+- get a movie into the server
+- run w2x on every frame
+- return a result
+
+upload probably should be handled by its own case -- stick something into a data dir, instead of as part of the request.
+"storage" already provides for something starting this (FileResult) but it should be extended to hold all kinds of data, not just results.
+
+convert can be seen as something like a one-man cluster -- upload the thing, create the dag, take off
+
+24frames/sec * 60 sec/min * 30 min = 43k frames -- not something I want to keep in raw DAG form. Is there a better method?
+How about 10 second == 240 frame chunks?
+
+video -> chunks -> chunks -> video
+
+--> dag nodes can be recursive / contain other dag
+
+do a chunk --> split it into 240 pieces, upscale, recombine, clean up the dag for the 240 chunks, move on to the next
+
+Where does ffmpeg live?
+It might be prudent to just let it live on the daemon
+    maybe as a plugin?
+
+/plug/ffmpeg/*
+
+
+-->
+
+
+def upscale_movie(movie_file):
+    chunks = ffmpeg.chunk(movie_file, chunk_size=10s)
+    chunks_upscaled = []
+    for chunk in chunks:
+        frames = ffpmeg.frames(chunk)
+        frames_upscaled = []
+        for frame in frames:
+            frame_upscaled.append(waifu2x(frame))
+        chunk_upscaled = ffmpeg.recombine_frames(frames_upscaled)
+        chunks_upscaled.append(chunk_upscaled)
+    movie_upscaled = ffmpeg.recombine_chunks(chunks_upscaled)
+    return movie_upscaled
+
+Example in JSON:
+upscale_frame = {
+    'type': 'call',
+    'call': {
+        'function': 'waifu2x/upscale',
+        'input': {
+            'image': '@read_fileref(input)'
+        },
+        'output': '@output["images"][0]'
+    }
+}
+
+Example in python:
+from somewhere import dag_node, dag_call, dag_fmap
+
+@dag_node('upscale_frame')
+def upscale_frame(input):
+    res = dag_call(function='waifu2x/upscale', input={'image': input})
+    return res['images'][0]
+
+@dag_node('upscale_chunk')
+def upscale_chunk(input: FileRef):
+    frames = dag_call(plug='ffmpeg/split_frames', input=input)
+    large_frames = dag_fmap(upscale_frame, frames)
+    upscaled = dag_call(plug='ffmpeg/recombine_frames', input=large_frames)
+
+@dag_node('upscale_movie'):
+def upscale_move(input: FileRef):
+    ...
+
+
+Example in sparklike python:
+
+from somewhere import dag_placeholder
+
+x = placeholder()
+x = x.map(lambda x: call_plugin('ffmpeg/split_chunks', x))
+x = x.map(lambda x: 1
+
+
+
+
+
+upscale_frame = call(function='waifu2x/upscale', {''
+
+This is annoying in that it uses the @ syntax to get around formatting issues

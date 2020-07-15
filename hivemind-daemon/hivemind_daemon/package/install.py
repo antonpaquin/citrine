@@ -13,7 +13,7 @@ from hivemind_daemon.package import repo
 logger = logging.getLogger(__name__)
 
 
-def install_package_file(localfile: str, activate: bool) -> Dict:
+def install_package_file(localfile: str, activate: bool, exist_ok: bool = None) -> Dict:
     # The cross-package complexity of this is a little annoying
     # Take advantage of opportunities to simplify
     logger.info(f'Installing new package from file {localfile}', {'localfile': localfile})
@@ -36,7 +36,14 @@ def install_package_file(localfile: str, activate: bool) -> Dict:
 
         package_meta = package.load.load_package_meta(os.path.join(tmpdir, 'meta.json'))
         install_id = str(uuid.uuid4())
-        db_package = package.db.install_package(package_meta, install_id)
+        if exist_ok:
+            try:
+                db_package = package.db.install_package(package_meta, install_id)
+            except errors.PackageAlreadyExists:
+                return {'status': 'OK', 'note': 'Package Already Installed'}
+        else:
+            db_package = package.db.install_package(package_meta, install_id)
+
         storage.package.install_from_temp(tmpdir, install_id, package_meta)
 
     if activate:
@@ -45,14 +52,14 @@ def install_package_file(localfile: str, activate: bool) -> Dict:
     return {'status': 'OK'}
 
 
-def install_package_url(url: str, package_hash: str, activate: bool) -> Dict:
+def install_package_url(url: str, package_hash: str, activate: bool, exist_ok: bool = None) -> Dict:
     dl_file = storage.download.get_file(url, package_hash)
-    return install_package_file(dl_file, activate)
+    return install_package_file(dl_file, activate, exist_ok=exist_ok)
 
 
-def install_package_name(name: str, activate: bool) -> Dict:
+def install_package_name(name: str, activate: bool, exist_ok: bool = None) -> Dict:
     pkg_url, pkg_hash = repo.index_lookup(name)
-    return install_package_url(pkg_url, pkg_hash, activate)
+    return install_package_url(pkg_url, pkg_hash, activate, exist_ok=exist_ok)
 
 
 def remove_package(name: str, version: Optional[str]):

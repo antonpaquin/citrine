@@ -175,6 +175,8 @@ def janitor_thread():
         t = time.time()
         purge_jobs = []
         for job_id, cached_job in job_cache.items():
+            if cached_job.cache_expire is None:
+                continue
             if cached_job.cache_expire < t:
                 purge_jobs.append(job_id)
         for job_id in purge_jobs:

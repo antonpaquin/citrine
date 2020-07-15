@@ -14,6 +14,8 @@ class DaemonLink(object):
 
 
 class HivemindRequest(object):
+    default_timeout = 10
+
     def __init__(
             self,
             server: DaemonLink,
@@ -22,6 +24,7 @@ class HivemindRequest(object):
             files: Optional[Dict[str, bytes]] = None,
             jsn: Optional[Dict] = None,
             method: str = 'post',
+            timeout: float = None,
     ):
         """
         :param server:
@@ -33,6 +36,10 @@ class HivemindRequest(object):
         """
         self.server = server
         self.method = method
+        if timeout is None:
+            self.timeout = self.default_timeout
+        else:
+            self.timeout = timeout
 
         self.url = f'http://{server.host}:{server.port}{endpoint}'
         self.request_args = {}
@@ -46,11 +53,11 @@ class HivemindRequest(object):
     def send(self):
         try:
             if self.method == 'post':
-                r = requests.post(self.url, **self.request_args, timeout=10)
+                r = requests.post(self.url, **self.request_args, timeout=self.timeout)
             elif self.method == 'get':
-                r = requests.get(self.url, **self.request_args, timeout=10)
+                r = requests.get(self.url, **self.request_args, timeout=self.timeout)
             else:
-                r = requests.request(self.method, self.url, **self.request_args, timeout=10)
+                r = requests.request(self.method, self.url, **self.request_args, timeout=self.timeout)
         except requests.exceptions.ConnectTimeout:
             raise errors.ConnectionError('Connection timed out')
         except requests.exceptions.ConnectionError:
@@ -72,8 +79,10 @@ class HivemindRequest(object):
             raise errors.ServerError('Server rejected request', data=resp)
         return resp
     
-    
+               cancel: bool = True
+
 class SyncRequest(HivemindRequest):
+    default_timeout = 60
     def run(self):
         return self.send()
 
@@ -87,7 +96,8 @@ class AsyncRequest(HivemindRequest):
             files: Optional[Dict[str, bytes]] = None,
             jsn: Optional[Dict] = None,
             method: str = 'post',
-            cancel: bool = True
+            cancel: bool = True,
+            timeout: float = None,
     ):
         """
         :param cancel:
@@ -100,6 +110,7 @@ class AsyncRequest(HivemindRequest):
             files=files,
             jsn=jsn,
             method=method,
+            timeout=timeout,
         )
         self.url = f'http://{server.host}:{server.port}/async{endpoint}'
         self.cancel = cancel
