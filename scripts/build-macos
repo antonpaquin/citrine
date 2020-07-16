@@ -11,7 +11,7 @@ set -ex
 
 sshpass -p 'build' ssh -p 4022 build@localhost echo "vm is live"
 
-sshpass -p 'build' scp -P 4022 artifacts/hivemind_src.zip build@localhost:hivemind_src.zip
+sshpass -p 'build' scp -P 4022 artifacts/citrine_src.zip build@localhost:citrine_src.zip
 sshpass -p 'build' scp -P 4022 vm/macos/build-macos.sh build@localhost:build-macos.sh
 sshpass -p 'build' scp -P 4022 vm/macos/QtQmlModels.patch build@localhost:QtQmlModels.patch
 sshpass -p 'build' scp -P 4022 vm/macos/Info.plist build@localhost:Info.plist
@@ -19,7 +19,7 @@ sshpass -p 'build' scp -r -P 4022 res/ build@localhost:res/
 
 sshpass -p 'build' ssh -p 4022 build@localhost chmod +x build-macos.sh \&\& ./build-macos.sh
 
-rm -r artifacts/hivemind-daemon-macos || true
-rm -r artifacts/hivemind-client-macos || true
-rm -r artifacts/hivemind-ui-macos || true
-sshpass -p 'build' scp -r -P 4022 build@localhost:hivemind/artifacts/* artifacts/
+rm -r artifacts/citrine-daemon-macos || true
+rm -r artifacts/citrine-client-macos || true
+rm -r artifacts/citrine-ui-macos || true
+sshpass -p 'build' scp -r -P 4022 build@localhost:citrine/artifacts/* artifacts/

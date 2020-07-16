@@ -11,14 +11,14 @@ set -ex
 
 sshpass -p 'build' ssh -p 3022 build@localhost echo "vm is live"
 
-sshpass -p 'build' scp -P 3022 artifacts/hivemind_src.zip build@localhost:hivemind_src.zip
+sshpass -p 'build' scp -P 3022 artifacts/citrine_src.zip build@localhost:citrine_src.zip
 sshpass -p 'build' scp -P 3022 vm/windows/build-windows.ps1 build@localhost:build-windows.ps1
-sshpass -p 'build' scp -P 3022 vm/windows/hivemind.wxs build@localhost:hivemind.wxs
+sshpass -p 'build' scp -P 3022 vm/windows/citrine.wxs build@localhost:citrine.wxs
 sshpass -p 'build' scp -r -P 3022 res/ build@localhost:res/
 
 sshpass -p 'build' ssh -p 3022 build@localhost powershell .\\build-windows.ps1
 
-rm -r artifacts/hivemind-daemon-win10 || true
-rm -r artifacts/hivemind-client-win10 || true
-rm -r artifacts/hivemind-ui-win10 || true
-sshpass -p 'build' scp -r -P 3022 build@localhost:hivemind/artifacts/* artifacts/
+rm -r artifacts/citrine-daemon-win10 || true
+rm -r artifacts/citrine-client-win10 || true
+rm -r artifacts/citrine-ui-win10 || true
+sshpass -p 'build' scp -r -P 3022 build@localhost:citrine/artifacts/* artifacts/

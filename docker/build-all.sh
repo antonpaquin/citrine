@@ -13,18 +13,18 @@ source env/bin/activate
 
 pip install wheel
 pip install pyinstaller
-pip install -e hivemind-daemon
-pip install -e hivemind-client
-pip install -e hivemind-ui
+pip install -e citrine-daemon
+pip install -e citrine-client
+pip install -e citrine-ui
 
-pushd hivemind-daemon
+pushd citrine-daemon
 ./package/build_pyinstaller_linux.sh
 popd
 
-pushd hivemind-client
+pushd citrine-client
 ./package/build_pyinstaller_linux.sh
 popd
 
-pushd hivemind-ui
+pushd citrine-ui
 ./package/build_pyinstaller_linux.sh
 popd

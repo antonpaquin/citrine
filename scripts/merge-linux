@@ -8,8 +8,8 @@ set -ex
 
 cd artifacts
 
-rm -rf hivemind-linux || true
-mkdir hivemind-linux
-rsync -r hivemind-daemon-linux/ hivemind-linux/
-rsync -r hivemind-client-linux/ hivemind-linux/
-rsync -r hivemind-ui-linux/ hivemind-linux/
+rm -rf citrine-linux || true
+mkdir citrine-linux
+rsync -r citrine-daemon-linux/ citrine-linux/
+rsync -r citrine-client-linux/ citrine-linux/
+rsync -r citrine-ui-linux/ citrine-linux/

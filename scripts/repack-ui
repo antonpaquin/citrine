@@ -6,8 +6,8 @@ cd ..
 
 set -ex
 
-CACHE_DIR="$HOME/.cache/hivemind/ui/interfaces"
-SOURCE_DIR="$HOME/hivemind-repo/ui/interfaces"
+CACHE_DIR="$HOME/.cache/citrine/ui/interfaces"
+SOURCE_DIR="$HOME/citrine-repo/ui/interfaces"
 
 for f in "$SOURCE_DIR"/*; do
     NAME="${f##*/}"

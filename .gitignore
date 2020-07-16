@@ -25,11 +25,11 @@ artifacts/
 res/*.png
 res/*.ico
 *.egg-info
-hivemind.log
+citrine.log
 __pycache__
 
-hivemind-daemon/onnx
-hivemind-repo
+citrine-daemon/onnx
+citrine-repo
 qtcreator
 scripts/gopass
 scripts/jira

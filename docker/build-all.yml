@@ -3,13 +3,13 @@ version: '3.8'
 services:
     stylegan:
         build: "./docker"
-        container_name: "hivemind-build"
+        container_name: "citrine-build"
         volumes:
             - "./artifacts:/build/artifacts"
             - "./docker:/build/docker"
-            - "./hivemind-client:/build/hivemind-client"
-            - "./hivemind-daemon:/build/hivemind-daemon"
-            - "./hivemind-ui:/build/hivemind-ui"
+            - "./citrine-client:/build/citrine-client"
+            - "./citrine-daemon:/build/citrine-daemon"
+            - "./citrine-ui:/build/citrine-ui"
         working_dir: "/build"
         entrypoint: ["/build/docker/build-all.sh"]
         dns:

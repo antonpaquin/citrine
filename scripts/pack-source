@@ -19,15 +19,15 @@ SRC_FILES=($(find . \( \
 	-o -path "*.git" \
 	-o -path "*.egg-info" \
 	-o -path "*.idea" \
-	-o -name "hivemind.log" \
+	-o -name "citrine.log" \
 	-o -name "*.pyc" \
 	-o -path "./activate" \
-	-o -path "./hivemind-repo" \
-	-o -path "./hivemind-ui/qtcreator" \
-	-o -path "./hivemind-ui/test" \
-	-o -path "./hivemind-daemon/onnx" \
-	-o -path "./hivemind-daemon/onnx" \
+	-o -path "./citrine-repo" \
+	-o -path "./citrine-ui/qtcreator" \
+	-o -path "./citrine-ui/test" \
+	-o -path "./citrine-daemon/onnx" \
+	-o -path "./citrine-daemon/onnx" \
 	\) -prune -o -type f -print))
 
-rm artifacts/hivemind_src.zip || true
-zip -r9 artifacts/hivemind_src.zip "${SRC_FILES[@]}"
+rm artifacts/citrine_src.zip || true
+zip -r9 artifacts/citrine_src.zip "${SRC_FILES[@]}"
